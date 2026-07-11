@@ -71,10 +71,10 @@ func TestApplyProfile(t *testing.T) {
 
 	// Build a mock profile to apply
 	p := &Profile{
-		Latency: profileLatency{
+		Latency: LatencyConfig{
 			Fixed: Duration{Duration: 2 * time.Second},
 		},
-		Failure: profileFailure{
+		Failure: FailureConfig{
 			Rate: 15,
 			Statuses: []StatusConfig{
 				{Code: 429, Rate: 100},
@@ -84,8 +84,8 @@ func TestApplyProfile(t *testing.T) {
 
 	ApplyProfile(&cfg, p)
 
-	if cfg.Latency.Fixed != 2*time.Second {
-		t.Errorf("expected 2s fixed latency, got %v", cfg.Latency.Fixed)
+	if cfg.Latency.Fixed.Duration != 2*time.Second {
+		t.Errorf("expected 2s fixed latency, got %v", cfg.Latency.Fixed.Duration)
 	}
 	if cfg.Failure.Rate != 15 {
 		t.Errorf("expected 15 failure rate, got %v", cfg.Failure.Rate)

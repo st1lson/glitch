@@ -15,13 +15,13 @@ import (
 // runServe is the main entrypoint for the serve command.
 func runServe(cmd *cobra.Command, args []string) error {
 	// 1. Build config
-	cfg, targetFile, proxyURL, err := buildConfig(cmd, args)
+	cfg, err := buildConfig(cmd, args)
 	if err != nil {
 		return err
 	}
 
 	// 2. Instantiate strategy Engine
-	eng, err := engine.New(targetFile, proxyURL, cfg.ReadOnly)
+	eng, err := engine.New(cfg.File, cfg.Proxy, cfg.ReadOnly)
 	if err != nil {
 		return err
 	}
@@ -89,10 +89,10 @@ func printBanner(cfg config.Config, modeName string, resources []string) {
 // formatLatency returns a human-readable representation of the latency config.
 func formatLatency(l config.LatencyConfig) string {
 	if l.Distribution != "" {
-		return fmt.Sprintf("%s(%s,%s)", l.Distribution, l.Min, l.Max)
+		return fmt.Sprintf("%s(%s,%s)", l.Distribution, l.Min.Duration, l.Max.Duration)
 	}
-	if l.Min > 0 && l.Max > 0 {
-		return fmt.Sprintf("%s-%s", l.Min, l.Max)
+	if l.Min.Duration > 0 && l.Max.Duration > 0 {
+		return fmt.Sprintf("%s-%s", l.Min.Duration, l.Max.Duration)
 	}
-	return l.Fixed.String()
+	return l.Fixed.Duration.String()
 }

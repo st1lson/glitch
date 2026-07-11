@@ -91,6 +91,35 @@ glitch db.json
 
 ---
 
+## 🛠️ Global Configuration
+
+Tired of typing long CLI flags? You can define your entire testing environment natively via a `glitch.yaml` file. Glitch automatically discovers `glitch.yaml` or `.glitch.yaml` in your current working directory.
+
+```yaml
+# glitch.yaml
+port: 8080
+proxy: http://api.staging.internal
+verbose: true
+latency:
+  distribution: "normal"
+  min: 200ms
+  max: 2s
+failure:
+  rate: 15
+  statuses:
+    - code: 502
+      rate: 10
+```
+
+Now you can simply run:
+```bash
+glitch
+```
+
+*Note: CLI flags always take precedence over the global configuration file, allowing you to easily override settings on the fly.*
+
+---
+
 ## Installation
 
 Ensure you have Go 1.20+ installed, then run:
@@ -108,6 +137,7 @@ Usage:
   glitch [file] [flags]
 
 Flags:
+      --config string      path to global config file (default: auto-discovers glitch.yaml)
       --fail-rate string   Overall failure rate percentage (e.g., 20)
   -h, --help               help for glitch
       --host string        Host to bind to (default "localhost")

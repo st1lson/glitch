@@ -2,7 +2,6 @@ package chaos
 
 import (
 	"context"
-	"math"
 	"math/rand/v2"
 	"time"
 
@@ -44,35 +43,43 @@ func (l *LatencyInjector) Inject(ctx context.Context) time.Duration {
 }
 
 // computeDelay returns the target delay duration based on the configured mode.
-func (l *LatencyInjector) computeDelay() time.Duration {
-	cfg := l.cfg
+func (e *LatencyInjector) computeDelay() time.Duration {
+	cfg := e.cfg
 
-	// Mode 1: Fixed latency.
-	if cfg.Fixed > 0 {
-		return cfg.Fixed
+	if cfg.Fixed.Duration > 0 {
+		return cfg.Fixed.Duration
 	}
 
-	// Range-based modes require both Min and Max.
-	if cfg.Min <= 0 || cfg.Max <= 0 {
+	// If no fixed or range is provided, return 0
+	if cfg.Min.Duration <= 0 && cfg.Max.Duration <= 0 {
 		return 0
 	}
 
-	minNs := float64(cfg.Min)
-	maxNs := float64(cfg.Max)
+	minF := float64(cfg.Min.Duration)
+	maxF := float64(cfg.Max.Duration)
 
-	// Mode 2: Normal distribution.
+	var delay time.Duration
 	if cfg.Distribution == "normal" {
-		mean := (minNs + maxNs) / 2
-		stddev := (maxNs - minNs) / 4
+		// Use a normal distribution centered between min and max
+		mean := (minF + maxF) / 2
+		stdDev := (maxF - minF) / 6 // 99.7% of values fall within 3 stdDevs
+		val := rand.NormFloat64()*stdDev + mean
 
-		sample := rand.NormFloat64()*stddev + mean
-
-		// Clamp to [0, Max*2] to prevent extreme outliers.
-		sample = math.Max(0, math.Min(sample, float64(cfg.Max)*2))
-
-		return time.Duration(sample)
+		// Clamp the result to [min, max]
+		if val < minF {
+			val = minF
+		} else if val > maxF {
+			val = maxF
+		}
+		delay = time.Duration(val)
+	} else {
+		// Default to uniform distribution
+		diff := cfg.Max.Duration - cfg.Min.Duration
+		if diff <= 0 {
+			return cfg.Min.Duration
+		}
+		delay = cfg.Min.Duration + time.Duration(rand.Int64N(int64(diff)))
 	}
 
-	// Mode 3 (default): Uniform random in [Min, Max].
-	return time.Duration(minNs + rand.Float64()*(maxNs-minNs))
+	return delay
 }

@@ -43,8 +43,8 @@ func ParseLatency(val string) (config.LatencyConfig, error) {
 			return cfg, fmt.Errorf("invalid latency max duration %q: %w", parts[1], err)
 		}
 
-		cfg.Min = minDur
-		cfg.Max = maxDur
+		cfg.Min = config.Duration{Duration: minDur}
+		cfg.Max = config.Duration{Duration: maxDur}
 		return cfg, nil
 	}
 
@@ -66,8 +66,8 @@ func ParseLatency(val string) (config.LatencyConfig, error) {
 			return cfg, fmt.Errorf("invalid latency max duration %q: %w", maxStr, err)
 		}
 
-		cfg.Min = minDur
-		cfg.Max = maxDur
+		cfg.Min = config.Duration{Duration: minDur}
+		cfg.Max = config.Duration{Duration: maxDur}
 		return cfg, nil
 	}
 
@@ -77,7 +77,7 @@ func ParseLatency(val string) (config.LatencyConfig, error) {
 		return cfg, fmt.Errorf("invalid latency duration %q: %w", val, err)
 	}
 
-	cfg.Fixed = d
+	cfg.Fixed = config.Duration{Duration: d}
 	return cfg, nil
 }
 

@@ -28,27 +28,28 @@ func (d *Duration) UnmarshalYAML(unmarshal func(any) error) error {
 
 // Config holds all configuration for the Glitch server.
 type Config struct {
-	Port     int
-	Host     string
-	DBFile   string
-	Verbose  bool
-	ReadOnly bool
+	Port     int    `yaml:"port"`
+	Host     string `yaml:"host"`
+	File     string `yaml:"file"`
+	Proxy    string `yaml:"proxy"`
+	Verbose  bool   `yaml:"verbose"`
+	ReadOnly bool   `yaml:"read_only"`
 
-	Latency LatencyConfig
-	Failure FailureConfig
+	Latency LatencyConfig `yaml:"latency"`
+	Failure FailureConfig `yaml:"failure"`
 }
 
 // LatencyConfig controls latency injection.
 type LatencyConfig struct {
-	Fixed        time.Duration `yaml:"fixed"`
-	Min          time.Duration `yaml:"min"`
-	Max          time.Duration `yaml:"max"`
-	Distribution string        `yaml:"distribution"` // "normal" or ""
+	Fixed        Duration `yaml:"fixed"`
+	Min          Duration `yaml:"min"`
+	Max          Duration `yaml:"max"`
+	Distribution string   `yaml:"distribution"` // "normal" or "uniform"
 }
 
 // Enabled returns true if any latency injection is configured.
 func (l LatencyConfig) Enabled() bool {
-	return l.Fixed > 0 || l.Min > 0 || l.Max > 0
+	return l.Fixed.Duration > 0 || l.Min.Duration > 0 || l.Max.Duration > 0
 }
 
 // FailureConfig controls failure injection.

@@ -73,7 +73,7 @@ func TestEngine_Middleware_Latency(t *testing.T) {
 	// Fixed latency of 50ms
 	cfg := config.Config{
 		Latency: config.LatencyConfig{
-			Fixed: 50 * time.Millisecond,
+			Fixed: config.Duration{Duration: 50 * time.Millisecond},
 		},
 	}
 	engine := NewEngine(cfg)

@@ -15,29 +15,13 @@ var embeddedProfiles embed.FS
 // builtinProfiles lists the profile names that are embedded in the binary.
 var builtinProfiles = []string{"mobile", "3g", "bad-wifi", "production"}
 
-// profileLatency is an intermediate struct for YAML unmarshaling of latency settings.
-// It uses the custom Duration type so that human-readable strings like "300ms" are
-// correctly parsed.
-type profileLatency struct {
-	Fixed        Duration `yaml:"fixed"`
-	Min          Duration `yaml:"min"`
-	Max          Duration `yaml:"max"`
-	Distribution string   `yaml:"distribution"`
-}
-
-// profileFailure is an intermediate struct for YAML unmarshaling of failure settings.
-type profileFailure struct {
-	Rate     float64        `yaml:"rate"`
-	Statuses []StatusConfig `yaml:"statuses"`
-}
-
 // Profile represents a named set of chaos-engineering settings that can be loaded
 // from a YAML file and applied to a Config.
 type Profile struct {
-	Name        string         `yaml:"name"`
-	Description string         `yaml:"description"`
-	Latency     profileLatency `yaml:"latency"`
-	Failure     profileFailure `yaml:"failure"`
+	Name        string        `yaml:"name"`
+	Description string        `yaml:"description"`
+	Latency     LatencyConfig `yaml:"latency"`
+	Failure     FailureConfig `yaml:"failure"`
 }
 
 // LoadProfile loads a chaos profile by name. It first checks the built-in
@@ -81,13 +65,13 @@ func parseProfile(data []byte) (*Profile, error) {
 // Only non-zero values in the profile override the existing config.
 func ApplyProfile(cfg *Config, profile *Profile) {
 	if profile.Latency.Fixed.Duration > 0 {
-		cfg.Latency.Fixed = profile.Latency.Fixed.Duration
+		cfg.Latency.Fixed = profile.Latency.Fixed
 	}
 	if profile.Latency.Min.Duration > 0 {
-		cfg.Latency.Min = profile.Latency.Min.Duration
+		cfg.Latency.Min = profile.Latency.Min
 	}
 	if profile.Latency.Max.Duration > 0 {
-		cfg.Latency.Max = profile.Latency.Max.Duration
+		cfg.Latency.Max = profile.Latency.Max
 	}
 	if profile.Latency.Distribution != "" {
 		cfg.Latency.Distribution = profile.Latency.Distribution

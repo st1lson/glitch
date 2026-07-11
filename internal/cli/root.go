@@ -27,6 +27,7 @@ func init() {
 	f.String("latency", "", "inject latency (e.g. \"2s\", \"500ms-3s\", \"normal:200ms,2s\")")
 	f.String("fail-rate", "", "percentage of requests that fail (e.g. \"20\" or \"20%\")")
 	f.StringSlice("status", nil, "error status codes with rates (e.g. \"500:10\", \"429:5\")")
+	f.String("config", "", "path to global config file (default: auto-discovers glitch.yaml)")
 	f.String("profile", "", "load a chaos profile (e.g. \"mobile\", \"degraded\")")
 	f.BoolP("verbose", "v", false, "enable verbose request logging")
 	f.Bool("read-only", false, "disable all write operations (POST, PUT, PATCH, DELETE)")

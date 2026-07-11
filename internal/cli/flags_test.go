@@ -77,7 +77,7 @@ func TestParseLatency(t *testing.T) {
 		if !tt.wantErr && got.Distribution != tt.wantDist {
 			t.Errorf("ParseLatency(%q) dist = %v, want %v", tt.input, got.Distribution, tt.wantDist)
 		}
-		if !tt.wantErr && tt.wantDist == "" && got.Fixed == 0 {
+		if !tt.wantErr && tt.wantDist == "" && got.Fixed.Duration == 0 {
 			t.Errorf("ParseLatency(%q) fixed latency should not be 0", tt.input)
 		}
 	}
