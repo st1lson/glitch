@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+  <defs>
+    <style>
+      .cyan { fill: #00d2d3; }
+      .magenta { fill: #f368e0; }
+      .dark { fill: #ffffff; }
+      .text { 
+        font-family: 'Segoe UI', -apple-system, sans-serif; 
+        font-weight: 900; 
+        font-size: 80px; 
+        letter-spacing: 4px; 
+      }
+    </style>
+  </defs>
+
+  <!-- Cyan C/G Shape -->
+  <!-- Outer arc radius 110, inner radius 60 -->
+  <path class="cyan" d="M 240 80 
+           A 110 110 0 0 0 240 300 
+           L 270 300 
+           L 270 250 
+           L 240 250 
+           A 60 60 0 0 1 240 130 
+           L 240 80 Z" />
+
+  <!-- Magenta Lightning Bolt -->
+  <polygon class="magenta" points="300,50 200,210 270,210 210,360 340,150 260,150" />
+
+  <!-- Cyan Glitch Blocks (Left side) -->
+  <rect class="cyan" x="110" y="110" width="15" height="15" />
+  <rect class="cyan" x="130" y="140" width="30" height="10" />
+  <rect class="cyan" x="90" y="200" width="25" height="8" />
+  <rect class="cyan" x="140" y="220" width="10" height="10" />
+  <rect class="cyan" x="115" y="270" width="40" height="12" />
+  
+  <!-- Cyan Horizontal offsets crossing the boundary -->
+  <rect class="cyan" x="220" y="160" width="20" height="8" />
+  <rect class="cyan" x="210" y="240" width="30" height="10" />
+
+  <!-- Magenta Glitch Blocks (Right side) -->
+  <rect class="magenta" x="350" y="80" width="20" height="10" />
+  <rect class="magenta" x="320" y="120" width="35" height="15" />
+  <rect class="magenta" x="360" y="240" width="20" height="8" />
+  <rect class="magenta" x="290" y="280" width="15" height="15" />
+  <rect class="magenta" x="330" y="310" width="25" height="10" />
+  
+  <!-- Magenta Horizontal offsets crossing the boundary -->
+  <rect class="magenta" x="260" y="180" width="30" height="10" />
+  <rect class="magenta" x="280" y="260" width="20" height="8" />
+
+  <!-- Text GLITCH -->
+  <text x="250" y="450" class="dark text" text-anchor="middle">GLITCH</text>
+
+</svg>
