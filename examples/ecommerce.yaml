@@ -1,0 +1,77 @@
+openapi: 3.0.3
+info:
+  title: E-Commerce Store API
+  version: 1.0.0
+paths:
+  /products:
+    get:
+      summary: List all products
+      responses:
+        '200':
+          description: A list of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    price:
+                      type: number
+                      format: float
+                    inStock:
+                      type: boolean
+                    category:
+                      type: string
+                      enum: [electronics, clothing, home, toys]
+                    tags:
+                      type: array
+                      items:
+                        type: string
+  /products/{productId}:
+    get:
+      summary: Get product details
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  stockCount:
+                    type: integer
+  /cart:
+    post:
+      summary: Add to cart
+      responses:
+        '201':
+          description: Item added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cartId:
+                    type: string
+                  totalItems:
+                    type: integer
+                  subtotal:
+                    type: number

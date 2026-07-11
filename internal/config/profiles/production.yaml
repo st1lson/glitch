@@ -1,0 +1,7 @@
+name: production
+description: Realistic production environment
+latency:
+  min: 50ms
+  max: 200ms
+failure:
+  rate: 1

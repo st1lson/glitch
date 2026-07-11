@@ -1,0 +1,7 @@
+name: 3g
+description: Slow 3G connection
+latency:
+  min: 1s
+  max: 5s
+failure:
+  rate: 10

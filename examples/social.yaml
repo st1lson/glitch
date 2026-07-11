@@ -1,0 +1,65 @@
+openapi: 3.0.3
+info:
+  title: Social Media API
+  version: 1.0.0
+paths:
+  /posts:
+    get:
+      summary: Get timeline posts
+      responses:
+        '200':
+          description: Timeline response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        postId:
+                          type: integer
+                        author:
+                          type: object
+                          properties:
+                            username:
+                              type: string
+                            isVerified:
+                              type: boolean
+                        content:
+                          type: string
+                        likesCount:
+                          type: integer
+                        createdAt:
+                          type: string
+                          format: date-time
+                  meta:
+                    type: object
+                    properties:
+                      nextCursor:
+                        type: string
+                      hasMore:
+                        type: boolean
+  /posts/{id}/like:
+    post:
+      summary: Like a post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Liked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  newLikesCount:
+                    type: integer

@@ -1,0 +1,7 @@
+name: mobile
+description: Typical mobile network conditions
+latency:
+  min: 300ms
+  max: 2s
+failure:
+  rate: 5

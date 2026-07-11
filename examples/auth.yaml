@@ -1,0 +1,65 @@
+openapi: 3.0.3
+info:
+  title: Auth & Profile API
+  version: 1.0.0
+paths:
+  /login:
+    post:
+      summary: User login
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  expiresIn:
+                    type: integer
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      email:
+                        type: string
+                        format: email
+                      roles:
+                        type: array
+                        items:
+                          type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid credentials"
+  /profile:
+    get:
+      summary: Get current user profile
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  firstName:
+                    type: string
+                  lastName:
+                    type: string
+                  preferences:
+                    type: object
+                    properties:
+                      newsletter:
+                        type: boolean
+                      theme:
+                        type: string
+                        enum: [light, dark, system]

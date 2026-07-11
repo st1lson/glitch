@@ -1,0 +1,67 @@
+{
+  "orders": [
+    {
+      "id": 1,
+      "productId": 1,
+      "quantity": 2,
+      "status": "shipped",
+      "userId": 1
+    },
+    {
+      "id": 2,
+      "productId": 3,
+      "quantity": 1,
+      "status": "pending",
+      "userId": 2
+    }
+  ],
+  "products": [
+    {
+      "category": "electronics",
+      "id": 1,
+      "inStock": true,
+      "price": 79.99,
+      "title": "Wireless Headphones"
+    },
+    {
+      "category": "kitchen",
+      "id": 2,
+      "inStock": true,
+      "price": 12.5,
+      "title": "Coffee Mug"
+    },
+    {
+      "category": "electronics",
+      "id": 3,
+      "inStock": false,
+      "price": 149.99,
+      "title": "Mechanical Keyboard"
+    }
+  ],
+  "users": [
+    {
+      "email": "alice@example.com",
+      "id": 1,
+      "name": "Alice Johnson",
+      "role": "admin"
+    },
+    {
+      "email": "bob@example.com",
+      "id": 2,
+      "name": "Bob Smith",
+      "role": "user"
+    },
+    {
+      "email": "charlie@example.com",
+      "id": 3,
+      "name": "Charlie Brown",
+      "role": "user"
+    },
+    {
+      "email": "diana@example.com",
+      "id": 4,
+      "name": "Diana Prince",
+      "role": "user"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+name: bad-wifi
+description: Flaky coffee-shop WiFi
+latency:
+  min: 200ms
+  max: 4s
+failure:
+  rate: 15
