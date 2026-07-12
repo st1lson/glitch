@@ -13,25 +13,25 @@ import (
 func buildConfig(cmd *cobra.Command, args []string) (config.Config, error) {
 	flags := cmd.Flags()
 
-	// 1. Identify explicit config or profile paths from flags
+	// Identify explicit config or profile paths from flags
 	configPath, _ := flags.GetString("config")
 	profileName, _ := flags.GetString("profile")
 
-	// 2. Initialize the Builder pipeline
+	// Initialize the Builder pipeline
 	builder := config.NewBuilder()
 
-	// 3. Add Sources in order of increasing precedence
+	// Add Sources in order of increasing precedence
 	builder.AddSource(config.NewFileSource(configPath))
 	builder.AddSource(config.NewProfileSource(profileName))
 	builder.AddSource(NewFlagSource(flags, args))
 
-	// 4. Build and deeply merge the configuration
+	// Build and deeply merge the configuration
 	cfg, err := builder.Build()
 	if err != nil {
 		return cfg, err
 	}
 
-	// 5. Final validation: Must have a File or Proxy defined
+	// Final validation: Must have a File or Proxy defined
 	if cfg.File == "" && cfg.Proxy == "" {
 		return cfg, fmt.Errorf("must provide either a target file or a --proxy url")
 	}

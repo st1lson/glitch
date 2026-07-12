@@ -79,5 +79,9 @@ func (s *FlagSource) Load() (*config.Config, error) {
 		cfg.Failure.Statuses = statuses
 	}
 
+	if s.flags.Changed("bandwidth") {
+		cfg.Bandwidth, _ = s.flags.GetString("bandwidth")
+	}
+
 	return &cfg, nil
 }

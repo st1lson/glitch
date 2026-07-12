@@ -33,6 +33,7 @@ func init() {
 	f.Bool("read-only", false, "disable all write operations (POST, PUT, PATCH, DELETE)")
 	f.Bool("no-tui", false, "disable the interactive dashboard and use standard stdout logging")
 	f.String("proxy", "", "reverse proxy to target URL (e.g. \"http://api.example.com\")")
+	f.String("bandwidth", "", "throttle response bandwidth (e.g. \"50kbps\", \"1mbps\")")
 }
 
 // Execute runs the root command and returns any error.

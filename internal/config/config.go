@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -38,8 +40,9 @@ type Config struct {
 	
 	ActiveProfile string `yaml:"-"`
 
-	Latency LatencyConfig `yaml:"latency"`
-	Failure FailureConfig `yaml:"failure"`
+	Bandwidth string        `yaml:"bandwidth"`
+	Latency   LatencyConfig `yaml:"latency"`
+	Failure   FailureConfig `yaml:"failure"`
 }
 
 // LatencyConfig controls latency injection.
@@ -82,5 +85,45 @@ func DefaultConfig() Config {
 
 // HasChaos returns true if any chaos features are enabled.
 func (c Config) HasChaos() bool {
-	return c.Latency.Enabled() || c.Failure.Enabled()
+	return c.Bandwidth != "" || c.Latency.Enabled() || c.Failure.Enabled()
+}
+// ParseBandwidth parses a bandwidth string into bytes per second.
+// Supports suffixes: kbps, mbps, b/s, kb/s, mb/s.
+func ParseBandwidth(val string) (int, error) {
+	val = strings.TrimSpace(strings.ToLower(val))
+	if val == "" || val == "0" || val == "unlimited" {
+		return 0, nil
+	}
+
+	var multiplier float64 = 1
+	var numStr string
+
+	if strings.HasSuffix(val, "kbps") || strings.HasSuffix(val, "kb/s") {
+		multiplier = 1024
+		numStr = strings.TrimSuffix(val, "kbps")
+		numStr = strings.TrimSuffix(numStr, "kb/s")
+	} else if strings.HasSuffix(val, "mbps") || strings.HasSuffix(val, "mb/s") {
+		multiplier = 1024 * 1024
+		numStr = strings.TrimSuffix(val, "mbps")
+		numStr = strings.TrimSuffix(numStr, "mb/s")
+	} else if strings.HasSuffix(val, "bps") || strings.HasSuffix(val, "b/s") {
+		multiplier = 1
+		numStr = strings.TrimSuffix(val, "bps")
+		numStr = strings.TrimSuffix(numStr, "b/s")
+	} else {
+		numStr = val // default to bytes if no suffix
+	}
+
+	numStr = strings.TrimSpace(numStr)
+	
+	rate, err := strconv.ParseFloat(numStr, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid bandwidth value %q: %w", val, err)
+	}
+
+	if rate <= 0 {
+		return 0, fmt.Errorf("bandwidth must be positive")
+	}
+
+	return int(rate * multiplier), nil
 }

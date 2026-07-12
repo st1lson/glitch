@@ -30,23 +30,23 @@ func CalculateLayout(termWidth, termHeight int, headerStr string) Layout {
 		return l
 	}
 
-	// 1. Measure header height exactly
+	// Measure header height exactly
 	hTitleFrame, _ := titleStyle.GetFrameSize()
 	header := titleStyle.Width(termWidth - 1 - hTitleFrame).Align(lipgloss.Center).Render(headerStr)
 	l.HeaderHeight = lipgloss.Height(header)
 
-	// 2. Determine available space for the main dashboard
+	// Determine available space for the main dashboard
 	availHeight := termHeight - l.HeaderHeight
 
-	// 3. Extract the physical bounds of the outer dashboard frame
+	// Extract the physical bounds of the outer dashboard frame
 	hFrame, vFrame := outerStyle.GetFrameSize()
 
-	// 4. Calculate content bounds.
+	// Calculate content bounds.
 	// We subtract 1 from width and height as a standard terminal layout safety margin.
 	l.ContentWidth = termWidth - hFrame - 1
 	l.ContentHeight = availHeight - vFrame - 1
 
-	// 5. Compute column widths
+	// Compute column widths
 	l.LeftWidth = int(float64(l.ContentWidth) * 0.35)
 	l.RightWidth = l.ContentWidth - l.LeftWidth
 

@@ -67,6 +67,12 @@ func renderControlPanelPane(layout Layout, cfg config.Config, actualMetricsHeigh
 		}
 	}
 	b.WriteString(renderRow("Latency Config:", latStr, 16))
+
+	bwStr := "Unlimited"
+	if cfg.Bandwidth != "" {
+		bwStr = cfg.Bandwidth
+	}
+	b.WriteString(renderRow("Bandwidth Limit:", bwStr, 16))
 	b.WriteString("\n")
 
 	b.WriteString(helpStyle.Render("q/ctrl+c to quit"))

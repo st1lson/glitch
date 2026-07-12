@@ -156,3 +156,4 @@ func ParseFailRate(val string) (float64, error) {
 
 	return rate, nil
 }
+

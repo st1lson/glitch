@@ -55,12 +55,20 @@ func (e *Engine) Middleware(next http.Handler) http.Handler {
 		cfg := e.state.Get()
 
 		// Fast path: nothing enabled, skip all overhead.
-		if !cfg.Latency.Enabled() && !cfg.Failure.Enabled() {
+		if !cfg.Latency.Enabled() && !cfg.Failure.Enabled() && cfg.Bandwidth == "" {
 			next.ServeHTTP(w, r)
 			return
 		}
 
 		info := &ChaosInfo{}
+
+		// Wrap ResponseWriter for bandwidth throttling if configured
+		var rw http.ResponseWriter = w
+		if cfg.Bandwidth != "" {
+			if bps, err := config.ParseBandwidth(cfg.Bandwidth); err == nil && bps > 0 {
+				rw = newThrottledWriter(w, bps)
+			}
+		}
 
 		// Phase 1: Latency injection.
 		if cfg.Latency.Enabled() {
@@ -73,16 +81,16 @@ func (e *Engine) Middleware(next http.Handler) http.Handler {
 				info.FailureCode = code
 				r = setChaosInfo(r, info)
 
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(code)
+				rw.Header().Set("Content-Type", "application/json")
+				rw.WriteHeader(code)
 				// Use a raw write to avoid importing encoding/json just for this.
-				fmt.Fprintf(w, `{"error":"Injected by Glitch","status":%d}`, code)
+				fmt.Fprintf(rw, `{"error":"Injected by Glitch","status":%d}`, code)
 				return
 			}
 		}
 
 		// Attach chaos info for downstream consumers (e.g., the logger).
 		r = setChaosInfo(r, info)
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(rw, r)
 	})
 }
