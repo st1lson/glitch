@@ -39,7 +39,18 @@ glitch --proxy https://api.staging.com --fail-rate 20
 glitch --proxy https://api.staging.com --status 429:10,503:5
 ```
 
-### 3. Shareable Chaos Profiles
+### 3. Bandwidth Throttling
+Simulate a poor 3G connection by capping download speeds. Instead of just delaying the response, Glitch streams the payload to the frontend in tiny chunks.
+
+```bash
+# Cap download speed to exactly 50 kilobytes per second
+glitch --proxy https://api.staging.com --bandwidth 50kbps
+
+# Dial-up speeds
+glitch --proxy https://api.staging.com --bandwidth 5kb/s
+```
+
+### 4. Shareable Chaos Profiles
 Save your worst-case scenarios as YAML files and commit them to your repository (`.glitch/profiles/flaky.yaml`) so your whole team can test against the same chaotic conditions.
 
 ```yaml
@@ -109,6 +120,7 @@ failure:
   statuses:
     - code: 502
       rate: 10
+bandwidth: 50kbps
 ```
 
 Now you can simply run:
@@ -122,11 +134,21 @@ glitch
 
 ## Installation
 
+### Via Go
 Ensure you have Go 1.20+ installed, then run:
 
 ```bash
 go install github.com/st1lson/glitch/cmd/glitch@latest
 ```
+
+### Via Docker
+Glitch is automatically published to the GitHub Container Registry as a highly optimized, tiny Alpine image.
+
+```bash
+docker run -p 3000:3000 ghcr.io/st1lson/glitch:latest --proxy https://api.staging.com --fail-rate 10
+```
+
+Perfect for dropping into a `docker-compose.yml` stack to run your Playwright / Cypress tests against a chaotic local backend!
 
 ---
 
@@ -137,11 +159,13 @@ Usage:
   glitch [file] [flags]
 
 Flags:
+      --bandwidth string   throttle response bandwidth (e.g. "50kbps", "1mbps")
       --config string      path to global config file (default: auto-discovers glitch.yaml)
       --fail-rate string   Overall failure rate percentage (e.g., 20)
   -h, --help               help for glitch
       --host string        Host to bind to (default "localhost")
       --latency string     Inject latency (e.g., 2s, normal:500ms,2s, uniform:1s,3s)
+      --no-tui             disable the interactive dashboard and use standard stdout logging
   -p, --port int           Port to listen on (default 3000)
       --profile string     Name of a chaos profile to apply
       --proxy string       Proxy requests to this target URL instead of using a local file

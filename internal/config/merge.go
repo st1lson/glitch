@@ -25,6 +25,15 @@ func (c *Config) Merge(override *Config) {
 	if override.ReadOnly {
 		c.ReadOnly = true
 	}
+	if override.NoTUI {
+		c.NoTUI = true
+	}
+	if override.ActiveProfile != "" {
+		c.ActiveProfile = override.ActiveProfile
+	}
+	if override.Bandwidth != "" {
+		c.Bandwidth = override.Bandwidth
+	}
 
 	c.mergeLatency(&override.Latency)
 	c.mergeFailure(&override.Failure)

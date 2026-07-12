@@ -1,0 +1,12 @@
+.git
+.gitignore
+.github
+Dockerfile
+*.md
+glitch
+glitch.exe
+*.yaml
+*.yml
+!glitch.yaml
+.idea
+.vscode
