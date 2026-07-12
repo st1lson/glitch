@@ -8,21 +8,10 @@ import (
 	"github.com/st1lson/glitch/internal/config"
 )
 
-// LatencyInjector adds artificial latency to requests based on the configured
-// latency profile (fixed, uniform range, or normal distribution).
-type LatencyInjector struct {
-	cfg config.LatencyConfig
-}
-
-// NewLatencyInjector creates a LatencyInjector from the given config.
-func NewLatencyInjector(cfg config.LatencyConfig) *LatencyInjector {
-	return &LatencyInjector{cfg: cfg}
-}
-
-// Inject computes the delay duration based on the configured mode, sleeps for
+// InjectLatency computes the delay duration based on the configured mode, sleeps for
 // that duration (respecting context cancellation), and returns the actual time slept.
-func (l *LatencyInjector) Inject(ctx context.Context) time.Duration {
-	delay := l.computeDelay()
+func InjectLatency(ctx context.Context, cfg config.LatencyConfig) time.Duration {
+	delay := computeDelay(cfg)
 	if delay <= 0 {
 		return 0
 	}
@@ -43,9 +32,7 @@ func (l *LatencyInjector) Inject(ctx context.Context) time.Duration {
 }
 
 // computeDelay returns the target delay duration based on the configured mode.
-func (e *LatencyInjector) computeDelay() time.Duration {
-	cfg := e.cfg
-
+func computeDelay(cfg config.LatencyConfig) time.Duration {
 	if cfg.Fixed.Duration > 0 {
 		return cfg.Fixed.Duration
 	}

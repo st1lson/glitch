@@ -12,7 +12,7 @@ import (
 func TestEngine_Middleware_NoChaos(t *testing.T) {
 	// Empty config means no chaos
 	cfg := config.Config{}
-	engine := NewEngine(cfg)
+	engine := NewEngine(config.NewState(cfg))
 
 	handlerCalled := false
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +42,7 @@ func TestEngine_Middleware_Failure(t *testing.T) {
 			Rate: 100,
 		},
 	}
-	engine := NewEngine(cfg)
+	engine := NewEngine(config.NewState(cfg))
 
 	handlerCalled := false
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -76,7 +76,7 @@ func TestEngine_Middleware_Latency(t *testing.T) {
 			Fixed: config.Duration{Duration: 50 * time.Millisecond},
 		},
 	}
-	engine := NewEngine(cfg)
+	engine := NewEngine(config.NewState(cfg))
 
 	var ctxInfo *ChaosInfo
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -34,6 +34,9 @@ type Config struct {
 	Proxy    string `yaml:"proxy"`
 	Verbose  bool   `yaml:"verbose"`
 	ReadOnly bool   `yaml:"read_only"`
+	NoTUI    bool   `yaml:"no_tui"`
+	
+	ActiveProfile string `yaml:"-"`
 
 	Latency LatencyConfig `yaml:"latency"`
 	Failure FailureConfig `yaml:"failure"`

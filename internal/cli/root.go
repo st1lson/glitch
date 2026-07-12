@@ -31,6 +31,7 @@ func init() {
 	f.String("profile", "", "load a chaos profile (e.g. \"mobile\", \"degraded\")")
 	f.BoolP("verbose", "v", false, "enable verbose request logging")
 	f.Bool("read-only", false, "disable all write operations (POST, PUT, PATCH, DELETE)")
+	f.Bool("no-tui", false, "disable the interactive dashboard and use standard stdout logging")
 	f.String("proxy", "", "reverse proxy to target URL (e.g. \"http://api.example.com\")")
 }
 

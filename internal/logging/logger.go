@@ -10,14 +10,34 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/st1lson/glitch/internal/chaos"
+	"github.com/st1lson/glitch/internal/config"
 )
 
-// RequestLogger returns a chi-compatible middleware that logs every HTTP request
-// with colored output. If verbose is true, request headers and body are also logged.
-func RequestLogger(verbose bool) func(http.Handler) http.Handler {
+// LogEvent contains all information about a processed HTTP request.
+type LogEvent struct {
+	Timestamp    time.Time
+	Method       string
+	Path         string
+	StatusCode   int
+	Duration     time.Duration
+	ChaosLatency time.Duration
+	ChaosFailure int
+	Formatted    string
+}
+
+// EventReporter is an interface for receiving log events asynchronously.
+type EventReporter interface {
+	Report(event LogEvent)
+}
+
+// RequestLogger returns a chi-compatible middleware that logs every HTTP request.
+// If an EventReporter is provided, events are broadcasted to it.
+// Otherwise, events are printed directly to stdout.
+func RequestLogger(state *config.State, reporter EventReporter) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
+			verbose := state.Get().Verbose
 
 			// In verbose mode, capture the request body so we can log it.
 			var bodyBytes []byte
@@ -42,18 +62,35 @@ func RequestLogger(verbose bool) func(http.Handler) http.Handler {
 
 			line := fmt.Sprintf("%s  %s  %s  %s", method, path, status, formatDuration(duration))
 
+			event := LogEvent{
+				Timestamp:  start,
+				Method:     r.Method,
+				Path:       r.URL.RequestURI(),
+				StatusCode: rw.statusCode,
+				Duration:   duration,
+			}
+
 			// Append chaos annotations if present.
 			if info := chaos.GetChaosInfo(r); info != nil {
+				event.ChaosLatency = info.LatencyAdded
+				event.ChaosFailure = info.FailureCode
+
 				annotations := buildChaosAnnotations(info)
 				if annotations != "" {
 					line += "  " + annotations
 				}
 			}
 
-			fmt.Println(line)
+			event.Formatted = line
+
+			if reporter != nil {
+				reporter.Report(event)
+			} else {
+				fmt.Println(line)
+			}
 
 			// Verbose: print headers and body.
-			if verbose {
+			if verbose && reporter == nil {
 				printVerbose(r, bodyBytes)
 			}
 		})

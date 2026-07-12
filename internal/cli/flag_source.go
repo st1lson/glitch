@@ -39,6 +39,9 @@ func (s *FlagSource) Load() (*config.Config, error) {
 	if s.flags.Changed("read-only") {
 		cfg.ReadOnly, _ = s.flags.GetBool("read-only")
 	}
+	if s.flags.Changed("no-tui") {
+		cfg.NoTUI, _ = s.flags.GetBool("no-tui")
+	}
 	if s.flags.Changed("proxy") {
 		cfg.Proxy, _ = s.flags.GetString("proxy")
 	}

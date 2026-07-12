@@ -37,46 +37,39 @@ func setChaosInfo(r *http.Request, info *ChaosInfo) *http.Request {
 // Engine is the central chaos-engineering component that orchestrates
 // latency injection and failure injection.
 type Engine struct {
-	latency *LatencyInjector
-	failure *FailureInjector
+	state *config.State
 }
 
-// NewEngine constructs a chaos Engine from the application config.
-// Injectors are only created when their respective configs are enabled.
-func NewEngine(cfg config.Config) *Engine {
-	e := &Engine{}
-
-	if cfg.Latency.Enabled() {
-		e.latency = NewLatencyInjector(cfg.Latency)
+// NewEngine constructs a chaos Engine from the application config state.
+func NewEngine(state *config.State) *Engine {
+	return &Engine{
+		state: state,
 	}
-
-	if cfg.Failure.Enabled() {
-		e.failure = NewFailureInjector(cfg.Failure)
-	}
-
-	return e
 }
 
 // Middleware returns an http.Handler middleware that applies chaos injection.
 // Order: latency first (sleep), then failure check (may short-circuit), then next.
-// If neither injector is configured, it's a zero-cost passthrough.
 func (e *Engine) Middleware(next http.Handler) http.Handler {
-	// Fast path: nothing enabled, skip all overhead.
-	if e.latency == nil && e.failure == nil {
-		return next
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Read current configuration safely.
+		cfg := e.state.Get()
+
+		// Fast path: nothing enabled, skip all overhead.
+		if !cfg.Latency.Enabled() && !cfg.Failure.Enabled() {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		info := &ChaosInfo{}
 
 		// Phase 1: Latency injection.
-		if e.latency != nil {
-			info.LatencyAdded = e.latency.Inject(r.Context())
+		if cfg.Latency.Enabled() {
+			info.LatencyAdded = InjectLatency(r.Context(), cfg.Latency)
 		}
 
 		// Phase 2: Failure injection — may short-circuit the request.
-		if e.failure != nil {
-			if shouldFail, code := e.failure.ShouldFail(); shouldFail {
+		if cfg.Failure.Enabled() {
+			if fail, code := ShouldFail(cfg.Failure); fail {
 				info.FailureCode = code
 				r = setChaosInfo(r, info)
 

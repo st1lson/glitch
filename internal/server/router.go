@@ -11,7 +11,7 @@ import (
 )
 
 // NewRouter builds a chi.Router wired with all middleware and API routes.
-func NewRouter(cfg config.Config, apiHandler http.Handler) chi.Router {
+func NewRouter(state *config.State, apiHandler http.Handler, reporter logging.EventReporter) chi.Router {
 	r := chi.NewRouter()
 
 	// Recovery middleware — catch panics and respond with 500.
@@ -21,13 +21,11 @@ func NewRouter(cfg config.Config, apiHandler http.Handler) chi.Router {
 	r.Use(corsMiddleware)
 
 	// Request logging.
-	r.Use(logging.RequestLogger(cfg.Verbose))
+	r.Use(logging.RequestLogger(state, reporter))
 
-	// Chaos middleware (only if chaos is configured).
-	if cfg.HasChaos() {
-		engine := chaos.NewEngine(cfg)
-		r.Use(engine.Middleware)
-	}
+	// Chaos middleware — always mounted so it can be dynamically toggled.
+	engine := chaos.NewEngine(state)
+	r.Use(engine.Middleware)
 
 	// Mount the specific API handler (JSON, Proxy, or OpenAPI)
 	r.Mount("/", apiHandler)
