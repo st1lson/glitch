@@ -1,15 +1,15 @@
-# Glitch: Frontend Chaos Engineering
+# Glitch: API Chaos Engineering
 
 Most local development environments are perfect. Your local API resolves in 2ms, zero packets are dropped, and you never hit a `502 Bad Gateway` error. But production is chaotic.
 
-**Glitch** is a local development interceptor built to simulate the chaos of production. It sits between your frontend application (React, Vue, Angular, etc.) and your backend API, injecting artificial latency, throttling bandwidth, and randomly failing requests so you can test your loading states, error boundaries, and retry logic.
+**Glitch** is a local development interceptor built to simulate the chaos of production. It sits between your client application (Frontend, Mobile App, Microservice, or E2E tests) and your backend API, injecting artificial latency, throttling bandwidth, and randomly failing requests so you can test your loading states, error boundaries, circuit breakers, and retry logic.
 
 ## Why Glitch?
 
-- **Test Error Boundaries:** Automatically throw 5xx or 4xx errors at random to ensure your frontend handles failures gracefully.
+- **Test Error Boundaries:** Automatically throw 5xx or 4xx errors at random to ensure your client handles failures gracefully.
 - **Test Loading States:** Simulate slow backends using fixed or variable (normal/uniform distribution) latency.
 - **Test Progressive Rendering:** Throttle bandwidth (e.g. `50kbps`) to test how large JSON payloads or images load on poor 3G connections.
-- **Team Alignment:** Share "Chaos Profiles" via YAML so your entire QA and engineering team can test against the exact same degraded network conditions.
+- **Team Alignment:** Share "Chaos Profiles" via YAML so your entire QA and engineering team can test against the exact same degraded network conditions in Cypress or Playwright.
 
 ## Core Engines
 

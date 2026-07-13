@@ -1,24 +1,24 @@
 <div align="center">
   <img src="assets/logo.svg" alt="Glitch Logo" width="300" />
-  <p><strong>Frontend Chaos Engineering. Stop pretending your backend is perfect.</strong></p>
+  <p><strong>API Chaos Engineering. Stop pretending your backend is perfect.</strong></p>
 </div>
 
 ---
 
-Most local development environments give you a perfect, zero-latency utopia. But in the real world, backends are flaky, networks drop packets, and servers randomly throw `502 Bad Gateway` errors. 
+Most local development and E2E testing environments give you a perfect, zero-latency utopia. But in the real world, backends are flaky, networks drop packets, and servers randomly throw `502 Bad Gateway` errors. 
 
-**Glitch** is a local development interceptor built specifically to simulate the chaos of production. Instead of manually hardcoding `setTimeout` or fake error responses into your React/Vue components to test loading states and error boundaries, you let Glitch inject chaos deterministically. 
+**Glitch** is a local development interceptor built specifically to simulate the chaos of production. Instead of manually hardcoding fake error responses into your apps to test loading states and error boundaries, you let Glitch inject chaos deterministically. 
 
-It wraps your API—either by reverse-proxying your staging environment or mocking it locally—and intentionally breaks things so you can build resilient frontends.
+It wraps your API—either by reverse-proxying your staging environment or mocking it locally—and intentionally breaks things so you can build resilient applications and robust E2E test suites (Cypress, Playwright, etc.).
 
 ---
 
 ## 🌪️ Chaos Engineering (The Fun Part)
 
-Glitch acts as a configurable middleware that sits between your frontend and the API.
+Glitch acts as a configurable middleware that sits between your client applications (frontend, mobile apps, or other backend microservices) and the API.
 
 ### 1. Simulating Latency
-Test your loading spinners, skeleton UI, and timeout logic without throttling your entire browser via DevTools.
+Test your loading spinners, skeleton UIs, and network timeout logic deterministically.
 
 ```bash
 # Add exactly 2 seconds to every request
@@ -29,7 +29,7 @@ glitch --proxy https://api.staging.com --latency normal:500ms,3s
 ```
 
 ### 2. Injecting Failures
-Ensure your error boundaries, toast notifications, and retry mechanisms actually work.
+Ensure your error boundaries, retry mechanisms, and circuit breakers actually work.
 
 ```bash
 # Force 20% of all requests to fail randomly
@@ -40,7 +40,7 @@ glitch --proxy https://api.staging.com --status 429:10,503:5
 ```
 
 ### 3. Bandwidth Throttling
-Simulate a poor 3G connection by capping download speeds. Instead of just delaying the response, Glitch streams the payload to the frontend in tiny chunks.
+Simulate a poor 3G connection by capping download speeds. Instead of just delaying the response, Glitch streams the payload to the consumer in tiny chunks.
 
 ```bash
 # Cap download speed to exactly 50 kilobytes per second
@@ -81,7 +81,7 @@ Don't have a local backend? Point Glitch at your live staging environment.
 ```bash
 glitch --proxy https://api.mycompany.staging.com
 ```
-*Glitch completely bypasses CORS restrictions and ignores self-signed TLS errors, letting your local `localhost` frontend seamlessly consume remote APIs.*
+*Glitch completely bypasses CORS restrictions and ignores self-signed TLS errors, letting your local `localhost` apps or E2E tests seamlessly consume remote APIs.*
 
 ### OpenAPI Mock Server
 Have an OpenAPI v3 spec? Let Glitch mock it locally.
