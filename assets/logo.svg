@@ -3,7 +3,7 @@
     <style>
       .cyan { fill: #00d2d3; }
       .magenta { fill: #f368e0; }
-      .dark { fill: #ffffff; }
+      .dark { fill: #00d2d3; }
       .text { 
         font-family: 'Segoe UI', -apple-system, sans-serif; 
         font-weight: 900; 
