@@ -12,6 +12,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
+	"github.com/st1lson/glitch/internal/chaos/monkey"
 	"github.com/st1lson/glitch/internal/config"
 	"github.com/st1lson/glitch/internal/engine"
 	"github.com/st1lson/glitch/internal/logging"
@@ -32,6 +33,14 @@ func runServe(cmd *cobra.Command, args []string) error {
 	}
 
 	state := config.NewState(cfg)
+
+	// Create a context for background workers that terminates when the server exits
+	workerCtx, cancelWorker := context.WithCancel(context.Background())
+	defer cancelWorker()
+
+	if cfg.Monkey.Enabled {
+		go monkey.Run(workerCtx, state)
+	}
 
 	var reporter logging.EventReporter
 	var p *tea.Program

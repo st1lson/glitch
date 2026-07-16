@@ -45,6 +45,23 @@ type Config struct {
 	Failure    FailureConfig    `yaml:"failure"`
 	Stall      StallConfig      `yaml:"stall"`
 	Corruption CorruptionConfig `yaml:"corruption"`
+	Monkey     MonkeyConfig     `yaml:"monkey"`
+}
+
+// MonkeyConfig controls dynamic chaos phases.
+type MonkeyConfig struct {
+	Enabled bool          `yaml:"enabled"`
+	Phases  []MonkeyPhase `yaml:"phases"`
+}
+
+// MonkeyPhase defines the chaos settings for a specific duration.
+type MonkeyPhase struct {
+	Duration   Duration         `yaml:"duration"`
+	Bandwidth  string           `yaml:"bandwidth"`
+	Latency    LatencyConfig    `yaml:"latency"`
+	Failure    FailureConfig    `yaml:"failure"`
+	Stall      StallConfig      `yaml:"stall"`
+	Corruption CorruptionConfig `yaml:"corruption"`
 }
 
 // StallMode represents the type of stall injection.
@@ -119,7 +136,7 @@ func DefaultConfig() Config {
 
 // HasChaos returns true if any chaos features are enabled.
 func (c Config) HasChaos() bool {
-	return c.Bandwidth != "" || c.Latency.Enabled() || c.Failure.Enabled() || c.Stall.Enabled() || c.Corruption.Enabled()
+	return c.Bandwidth != "" || c.Latency.Enabled() || c.Failure.Enabled() || c.Stall.Enabled() || c.Corruption.Enabled() || c.Monkey.Enabled
 }
 
 // ParseBandwidth parses a bandwidth string into bytes per second.

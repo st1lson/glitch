@@ -65,7 +65,26 @@ corruption:
   multi: true          # Apply multiple mutators at once
 ```
 
-### 5. Shareable Chaos Profiles
+### 5. Chaos Monkey Mode
+Instead of static settings, configure Glitch to dynamically change its chaos profile over time. Perfect for testing how your frontend recovers from temporary outages (like Netflix's Chaos Monkey).
+
+```yaml
+# glitch.yaml
+monkey:
+  enabled: true
+  phases:
+    - duration: "2m"
+      failure:
+        rate: 0
+    - duration: "30s"
+      failure:
+        rate: 100
+    - duration: "1m"
+      latency:
+        fixed: "3s"
+```
+
+### 6. Shareable Chaos Profiles
 Save your worst-case scenarios as YAML files and commit them to your repository (`.glitch/profiles/flaky.yaml`) so your whole team can test against the same chaotic conditions.
 
 ```yaml

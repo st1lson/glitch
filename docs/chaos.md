@@ -123,3 +123,28 @@ Glitch supports four built-in mutation strategies:
      - **Truncation**: Cuts the JSON string in half, returning invalid/incomplete JSON.
      - **Trailing Comma**: Injects a trailing comma before the closing bracket `]` or brace `}`.
      - **Unescaped Quote**: Injects an unescaped double quote `"` in the middle of the JSON string.
+
+---
+
+## Chaos Monkey Mode
+
+Instead of static failure rates and latency, you can configure Glitch to dynamically cycle between different chaos phases over time. This is incredibly useful for testing how your frontend applications recover from network outages or degraded states (e.g., reconnecting to a WebSocket, backoff polling, etc.).
+
+*Note: Chaos Monkey Mode is currently configured via your `glitch.yaml` file.*
+
+```yaml
+monkey:
+  enabled: true
+  phases:
+    - duration: "2m"       # Phase 1: API works perfectly for 2 minutes
+      failure:
+        rate: 0
+    - duration: "30s"      # Phase 2: API goes completely offline for 30s
+      failure:
+        rate: 100
+    - duration: "1m"       # Phase 3: API recovers, but is very slow for 1 min
+      latency:
+        fixed: "3s"
+      failure:
+        rate: 0
+```
