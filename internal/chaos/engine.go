@@ -6,6 +6,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/st1lson/glitch/internal/chaos/corruption"
+	"github.com/st1lson/glitch/internal/chaos/failure"
+	"github.com/st1lson/glitch/internal/chaos/latency"
+	"github.com/st1lson/glitch/internal/chaos/stall"
+	"github.com/st1lson/glitch/internal/chaos/throttle"
 	"github.com/st1lson/glitch/internal/config"
 )
 
@@ -71,34 +76,36 @@ func (e *Engine) Middleware(next http.Handler) http.Handler {
 			}
 		}
 
-		// Phase 1: Latency injection.
-		if cfg.Latency.Enabled() {
-			info.LatencyAdded = InjectLatency(r.Context(), cfg.Latency)
+		// Phase 0: Bandwidth Throttling (wrapping the ResponseWriter)
+		if cfg.BandwidthBps > 0 {
+			rw = throttle.NewWriter(rw, cfg.BandwidthBps)
 		}
 
-		// Phase 2: Failure injection — may short-circuit the request.
-		if cfg.Failure.Enabled() {
-			if fail, code := ShouldFail(cfg.Failure); fail {
-				info.FailureCode = code
-				r = setChaosInfo(r, info)
+		// Phase 1: Latency Injection
+		if cfg.Latency.Enabled() {
+			if applied, delay := latency.Inject(cfg.Latency); applied {
+				info.LatencyAdded = delay
+			}
+		}
 
-				rw.Header().Set("Content-Type", "application/json")
-				rw.WriteHeader(code)
-				// Use a raw write to avoid importing encoding/json just for this.
-				fmt.Fprintf(rw, `{"error":"Injected by Glitch","status":%d}`, code)
+		// Phase 2: Failure Injection
+		if cfg.Failure.Enabled() {
+			if fail, code := failure.ShouldTrigger(cfg.Failure); fail {
+				info.FailureCode = code
+				http.Error(rw, http.StatusText(code), code)
 				return
 			}
 		}
 
-		// Phase 3: Stall injection. Wrap the ResponseWriter.
-		if cfg.Stall.Enabled() && ShouldStall(cfg.Stall) {
-			rw = newStallWriter(rw, cfg.Stall.Mode, cfg.Stall.DropAt)
+		// Phase 3: Stall Injection. Wrap the ResponseWriter.
+		if cfg.Stall.Enabled() && stall.ShouldTrigger(cfg.Stall) {
+			rw = stall.NewWriter(rw, cfg.Stall.Mode, cfg.Stall.DropAt)
 		}
 
 		// Phase 4: Payload corruption. Wrap the ResponseWriter to buffer and mutate.
-		var cw *corruptionWriter
-		if cfg.Corruption.Enabled() && ShouldCorrupt(cfg.Corruption) {
-			cw = newCorruptionWriter(rw, cfg.Corruption)
+		var cw *corruption.Writer
+		if cfg.Corruption.Enabled() && corruption.ShouldTrigger(cfg.Corruption) {
+			cw = corruption.NewWriter(rw, cfg.Corruption)
 			rw = cw
 			info.Corrupted = true
 		}
@@ -109,7 +116,7 @@ func (e *Engine) Middleware(next http.Handler) http.Handler {
 
 		// Flush corruption buffer if active
 		if cw != nil {
-			cw.flush()
+			cw.Flush()
 		}
 	})
 }

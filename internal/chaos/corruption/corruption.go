@@ -1,4 +1,4 @@
-package chaos
+package corruption
 
 import (
 	"bytes"
@@ -11,16 +11,16 @@ import (
 	"github.com/st1lson/glitch/internal/config"
 )
 
-// ShouldCorrupt determines whether to inject a payload corruption for the current request.
-func ShouldCorrupt(cfg config.CorruptionConfig) bool {
+// ShouldTrigger determines whether to inject a payload corruption for the current request.
+func ShouldTrigger(cfg config.CorruptionConfig) bool {
 	if cfg.Rate <= 0 {
 		return false
 	}
 	return rand.Float64() < (cfg.Rate / 100.0)
 }
 
-// corruptionWriter wraps an http.ResponseWriter to buffer and mutate the response body.
-type corruptionWriter struct {
+// Writer wraps an http.ResponseWriter to buffer and mutate the response body.
+type Writer struct {
 	http.ResponseWriter
 	buf        bytes.Buffer
 	cfg        config.CorruptionConfig
@@ -28,16 +28,16 @@ type corruptionWriter struct {
 	wroteHeader bool
 }
 
-// newCorruptionWriter creates a new corruptionWriter.
-func newCorruptionWriter(w http.ResponseWriter, cfg config.CorruptionConfig) *corruptionWriter {
-	return &corruptionWriter{
+// NewWriter creates a new Writer.
+func NewWriter(w http.ResponseWriter, cfg config.CorruptionConfig) *Writer {
+	return &Writer{
 		ResponseWriter: w,
 		cfg:            cfg,
 	}
 }
 
 // WriteHeader captures the status code but delays writing it until flush.
-func (c *corruptionWriter) WriteHeader(statusCode int) {
+func (c *Writer) WriteHeader(statusCode int) {
 	if !c.wroteHeader {
 		c.statusCode = statusCode
 		c.wroteHeader = true
@@ -45,15 +45,15 @@ func (c *corruptionWriter) WriteHeader(statusCode int) {
 }
 
 // Write buffers the response body.
-func (c *corruptionWriter) Write(p []byte) (int, error) {
+func (c *Writer) Write(p []byte) (int, error) {
 	if !c.wroteHeader {
 		c.WriteHeader(http.StatusOK)
 	}
 	return c.buf.Write(p)
 }
 
-// flush applies corruption if applicable and writes the buffered data to the underlying writer.
-func (c *corruptionWriter) flush() {
+// Flush applies corruption if applicable and writes the buffered data to the underlying writer.
+func (c *Writer) Flush() {
 	if !c.wroteHeader {
 		return
 	}

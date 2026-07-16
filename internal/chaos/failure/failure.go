@@ -1,4 +1,4 @@
-package chaos
+package failure
 
 import (
 	"math/rand/v2"
@@ -6,15 +6,14 @@ import (
 	"github.com/st1lson/glitch/internal/config"
 )
 
-// ShouldFail determines whether to inject a failure for the current request.
-// It returns whether to fail and the HTTP status code to use.
+// ShouldTrigger determines if the request should fail, and returns the status code if so.
 //
 // Logic:
 //  1. Check each specific StatusConfig — if its random roll hits, return that code.
 //  2. If no specific status triggered but a general Rate is configured,
 //     roll against that rate and return 500 on hit.
 //  3. Otherwise, return false.
-func ShouldFail(cfg config.FailureConfig) (bool, int) {
+func ShouldTrigger(cfg config.FailureConfig) (bool, int) {
 	// Phase 1: Check per-status-code failure rates.
 	for _, sc := range cfg.Statuses {
 		if sc.Rate > 0 && rand.Float64() < (sc.Rate/100.0) {

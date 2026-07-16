@@ -1,4 +1,4 @@
-package chaos
+package stall
 
 import (
 	"math/rand/v2"
@@ -8,16 +8,17 @@ import (
 	"github.com/st1lson/glitch/internal/config"
 )
 
-// ShouldStall determines whether to inject a stall for the current request.
-func ShouldStall(cfg config.StallConfig) bool {
+// ShouldTrigger determines if the request should be stalled based on the configured rate.
+func ShouldTrigger(cfg config.StallConfig) bool {
 	if cfg.Rate <= 0 {
 		return false
 	}
 	return rand.Float64() < (cfg.Rate / 100.0)
 }
 
-// stallWriter wraps an http.ResponseWriter to simulate mid-flight stalls.
-type stallWriter struct {
+// Writer wraps an http.ResponseWriter to simulate a stall (hang or drop)
+// during the response body stream.
+type Writer struct {
 	http.ResponseWriter
 	mode         config.StallMode
 	dropAtRatio  float64
@@ -26,23 +27,23 @@ type stallWriter struct {
 	stalled      bool
 }
 
-// newStallWriter creates a new stallWriter.
-func newStallWriter(w http.ResponseWriter, mode config.StallMode, dropAt float64) http.ResponseWriter {
+// NewWriter creates a new Writer.
+func NewWriter(w http.ResponseWriter, mode config.StallMode, dropAt int) http.ResponseWriter {
 	if dropAt <= 0 {
 		dropAt = 50 // default to 50%
 	}
 	if mode == "" {
 		mode = config.StallModeDrop // default mode
 	}
-	return &stallWriter{
+	return &Writer{
 		ResponseWriter: w,
 		mode:           mode,
-		dropAtRatio:    dropAt / 100.0,
+		dropAtRatio:    float64(dropAt) / 100.0,
 	}
 }
 
-// WriteHeader intercepts the response status code and tries to read the Content-Length.
-func (s *stallWriter) WriteHeader(statusCode int) {
+// WriteHeader overrides the default WriteHeader.
+func (s *Writer) WriteHeader(statusCode int) {
 	cl := s.Header().Get("Content-Length")
 	if cl != "" {
 		if parsed, err := strconv.ParseInt(cl, 10, 64); err == nil {
@@ -52,8 +53,8 @@ func (s *stallWriter) WriteHeader(statusCode int) {
 	s.ResponseWriter.WriteHeader(statusCode)
 }
 
-// Write intercepts the response body and stalls it mid-flight when the threshold is reached.
-func (s *stallWriter) Write(p []byte) (int, error) {
+// Write writes data and simulates stall conditions when crossing the drop threshold.
+func (s *Writer) Write(p []byte) (int, error) {
 	if s.stalled {
 		if s.mode == config.StallModeHang {
 			select {} // block indefinitely

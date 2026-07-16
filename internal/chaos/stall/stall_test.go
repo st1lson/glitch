@@ -1,4 +1,4 @@
-package chaos
+package stall
 
 import (
 	"net/http"

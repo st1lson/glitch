@@ -1,27 +1,26 @@
-package chaos
+package throttle
 
 import (
 	"net/http"
 	"time"
 )
 
-// throttledWriter wraps an http.ResponseWriter to simulate limited bandwidth.
-type throttledWriter struct {
+// Writer wraps http.ResponseWriter to restrict bandwidth.
+type Writer struct {
 	http.ResponseWriter
 	bps int
 }
 
-// newThrottledWriter creates a new throttledWriter.
-func newThrottledWriter(w http.ResponseWriter, bps int) http.ResponseWriter {
-	return &throttledWriter{
+// NewWriter creates a new Writer.
+func NewWriter(w http.ResponseWriter, bps int) http.ResponseWriter {
+	return &Writer{
 		ResponseWriter: w,
 		bps:            bps,
 	}
 }
 
-// Write intercepts the response body and sends it in chunks, delaying between chunks
-// to simulate the configured bytes-per-second bandwidth limit.
-func (t *throttledWriter) Write(p []byte) (int, error) {
+// Write handles data streaming and applies pacing.
+func (t *Writer) Write(p []byte) (int, error) {
 	if t.bps <= 0 {
 		return t.ResponseWriter.Write(p)
 	}

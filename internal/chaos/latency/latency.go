@@ -1,4 +1,4 @@
-package chaos
+package latency
 
 import (
 	"context"

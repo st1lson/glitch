@@ -1,4 +1,4 @@
-package chaos
+package corruption
 
 import (
 	"bytes"

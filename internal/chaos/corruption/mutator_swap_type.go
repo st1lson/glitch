@@ -1,4 +1,4 @@
-package chaos
+package corruption
 
 import (
 	"math/rand/v2"
