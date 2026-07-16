@@ -121,7 +121,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Process log event
 		m.metrics.TotalRequests++
 
-		if msg.ChaosFailure > 0 || msg.ChaosLatency > 0 {
+		if msg.ChaosFailure > 0 || msg.ChaosLatency > 0 || msg.ChaosCorrupted {
 			m.metrics.ChaosIntercepts++
 		}
 

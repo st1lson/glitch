@@ -37,6 +37,7 @@ func (c *Config) Merge(override *Config) {
 
 	c.mergeLatency(&override.Latency)
 	c.mergeFailure(&override.Failure)
+	c.mergeCorruption(&override.Corruption)
 }
 
 func (c *Config) mergeLatency(override *LatencyConfig) {
@@ -60,5 +61,17 @@ func (c *Config) mergeFailure(override *FailureConfig) {
 	}
 	if len(override.Statuses) > 0 {
 		c.Failure.Statuses = override.Statuses
+	}
+}
+
+func (c *Config) mergeCorruption(override *CorruptionConfig) {
+	if override.Rate > 0 {
+		c.Corruption.Rate = override.Rate
+	}
+	if len(override.Strategies) > 0 {
+		c.Corruption.Strategies = override.Strategies
+	}
+	if override.Multi {
+		c.Corruption.Multi = true
 	}
 }

@@ -22,6 +22,7 @@ type LogEvent struct {
 	Duration     time.Duration
 	ChaosLatency time.Duration
 	ChaosFailure int
+	ChaosCorrupted bool
 	Formatted    string
 }
 
@@ -74,6 +75,7 @@ func RequestLogger(state *config.State, reporter EventReporter) func(http.Handle
 			if info := chaos.GetChaosInfo(r); info != nil {
 				event.ChaosLatency = info.LatencyAdded
 				event.ChaosFailure = info.FailureCode
+				event.ChaosCorrupted = info.Corrupted
 
 				annotations := buildChaosAnnotations(info)
 				if annotations != "" {
@@ -187,6 +189,10 @@ func buildChaosAnnotations(info *chaos.ChaosInfo) string {
 
 	if info.FailureCode > 0 {
 		parts = append(parts, fmt.Sprintf("💥 injected %d", info.FailureCode))
+	}
+
+	if info.Corrupted {
+		parts = append(parts, "🧬 corrupted")
 	}
 
 	return strings.Join(parts, "  ")

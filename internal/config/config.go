@@ -44,6 +44,7 @@ type Config struct {
 	Latency   LatencyConfig `yaml:"latency"`
 	Failure   FailureConfig `yaml:"failure"`
 	Stall     StallConfig   `yaml:"stall"`
+	Corruption CorruptionConfig `yaml:"corruption"`
 }
 
 // StallMode represents the type of stall injection.
@@ -64,6 +65,18 @@ type StallConfig struct {
 // Enabled returns true if stall injection is configured.
 func (s StallConfig) Enabled() bool {
 	return s.Rate > 0
+}
+
+// CorruptionConfig controls JSON payload mutation.
+type CorruptionConfig struct {
+	Rate       float64  `yaml:"rate"`       // 0-100 percentage of JSON responses to corrupt
+	Strategies []string `yaml:"strategies"` // which mutators to enable: "drop_field", "swap_type", "inject_null", "break_syntax"
+	Multi      bool     `yaml:"multi"`      // if true, apply multiple random mutators per response instead of just one
+}
+
+// Enabled returns true if corruption is configured.
+func (c CorruptionConfig) Enabled() bool {
+	return c.Rate > 0
 }
 
 // LatencyConfig controls latency injection.
@@ -106,7 +119,7 @@ func DefaultConfig() Config {
 
 // HasChaos returns true if any chaos features are enabled.
 func (c Config) HasChaos() bool {
-	return c.Bandwidth != "" || c.Latency.Enabled() || c.Failure.Enabled() || c.Stall.Enabled()
+	return c.Bandwidth != "" || c.Latency.Enabled() || c.Failure.Enabled() || c.Stall.Enabled() || c.Corruption.Enabled()
 }
 // ParseBandwidth parses a bandwidth string into bytes per second.
 // Supports suffixes: kbps, mbps, b/s, kb/s, mb/s.

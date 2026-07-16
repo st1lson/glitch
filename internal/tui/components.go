@@ -73,6 +73,15 @@ func renderControlPanelPane(layout Layout, cfg config.Config, actualMetricsHeigh
 		bwStr = cfg.Bandwidth
 	}
 	b.WriteString(renderRow("Bandwidth Limit:", bwStr, 16))
+
+	corruptStr := "Disabled"
+	if cfg.Corruption.Enabled() {
+		corruptStr = fmt.Sprintf("%.0f%%", cfg.Corruption.Rate)
+		if len(cfg.Corruption.Strategies) > 0 {
+			corruptStr += fmt.Sprintf(" (%s)", strings.Join(cfg.Corruption.Strategies, ", "))
+		}
+	}
+	b.WriteString(renderRow("Corruption:", corruptStr, 16))
 	b.WriteString("\n")
 
 	b.WriteString(helpStyle.Render("q/ctrl+c to quit"))

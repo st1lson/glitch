@@ -18,6 +18,7 @@ type chaosContextKey struct{}
 type ChaosInfo struct {
 	LatencyAdded time.Duration
 	FailureCode  int
+	Corrupted    bool
 }
 
 // GetChaosInfo retrieves the ChaosInfo attached to the request, or nil if none.
@@ -55,7 +56,7 @@ func (e *Engine) Middleware(next http.Handler) http.Handler {
 		cfg := e.state.Get()
 
 		// Fast path: nothing enabled, skip all overhead.
-		if !cfg.Latency.Enabled() && !cfg.Failure.Enabled() && cfg.Bandwidth == "" {
+		if !cfg.Latency.Enabled() && !cfg.Failure.Enabled() && cfg.Bandwidth == "" && !cfg.Corruption.Enabled() {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -94,8 +95,21 @@ func (e *Engine) Middleware(next http.Handler) http.Handler {
 			rw = newStallWriter(rw, cfg.Stall.Mode, cfg.Stall.DropAt)
 		}
 
+		// Phase 4: Payload corruption. Wrap the ResponseWriter to buffer and mutate.
+		var cw *corruptionWriter
+		if cfg.Corruption.Enabled() && ShouldCorrupt(cfg.Corruption) {
+			cw = newCorruptionWriter(rw, cfg.Corruption)
+			rw = cw
+			info.Corrupted = true
+		}
+
 		// Attach chaos info for downstream consumers (e.g., the logger).
 		r = setChaosInfo(r, info)
 		next.ServeHTTP(rw, r)
+
+		// Flush corruption buffer if active
+		if cw != nil {
+			cw.flush()
+		}
 	})
 }
