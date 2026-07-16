@@ -30,6 +30,11 @@ failure:
       rate: 5
 
 bandwidth: 50kbps
+
+stall:
+  rate: 5
+  mode: drop
+  drop_at: 50
 ```
 
 Once this file exists, you can just type:
@@ -59,6 +64,10 @@ failure:
   statuses:
     - code: 503
       rate: 100
+stall:
+  rate: 100
+  mode: drop
+  drop_at: 10
 ```
 
 To run a profile, simply pass the `--profile` flag:

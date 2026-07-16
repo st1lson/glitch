@@ -43,6 +43,27 @@ type Config struct {
 	Bandwidth string        `yaml:"bandwidth"`
 	Latency   LatencyConfig `yaml:"latency"`
 	Failure   FailureConfig `yaml:"failure"`
+	Stall     StallConfig   `yaml:"stall"`
+}
+
+// StallMode represents the type of stall injection.
+type StallMode string
+
+const (
+	StallModeDrop StallMode = "drop"
+	StallModeHang StallMode = "hang"
+)
+
+// StallConfig controls mid-flight network stalls and connection drops.
+type StallConfig struct {
+	Rate   float64   `yaml:"rate"`    // 0-100 percentage
+	Mode   StallMode `yaml:"mode"`    // "drop" (TCP reset) or "hang" (block indefinitely)
+	DropAt float64   `yaml:"drop_at"` // 0-100 percentage of payload to stream before stalling (default 50)
+}
+
+// Enabled returns true if stall injection is configured.
+func (s StallConfig) Enabled() bool {
+	return s.Rate > 0
 }
 
 // LatencyConfig controls latency injection.
@@ -85,7 +106,7 @@ func DefaultConfig() Config {
 
 // HasChaos returns true if any chaos features are enabled.
 func (c Config) HasChaos() bool {
-	return c.Bandwidth != "" || c.Latency.Enabled() || c.Failure.Enabled()
+	return c.Bandwidth != "" || c.Latency.Enabled() || c.Failure.Enabled() || c.Stall.Enabled()
 }
 // ParseBandwidth parses a bandwidth string into bytes per second.
 // Supports suffixes: kbps, mbps, b/s, kb/s, mb/s.

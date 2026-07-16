@@ -63,6 +63,9 @@ failure:
   statuses:
     - code: 502
       rate: 15
+stall:
+  rate: 5
+  mode: drop
 ```
 
 Run it instantly:
@@ -121,6 +124,10 @@ failure:
     - code: 502
       rate: 10
 bandwidth: 50kbps
+stall:
+  rate: 5
+  mode: drop
+  drop_at: 50
 ```
 
 Now you can simply run:

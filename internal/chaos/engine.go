@@ -89,6 +89,11 @@ func (e *Engine) Middleware(next http.Handler) http.Handler {
 			}
 		}
 
+		// Phase 3: Stall injection. Wrap the ResponseWriter.
+		if cfg.Stall.Enabled() && ShouldStall(cfg.Stall) {
+			rw = newStallWriter(rw, cfg.Stall.Mode, cfg.Stall.DropAt)
+		}
+
 		// Attach chaos info for downstream consumers (e.g., the logger).
 		r = setChaosInfo(r, info)
 		next.ServeHTTP(rw, r)

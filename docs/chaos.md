@@ -59,3 +59,20 @@ glitch --proxy https://api.staging.com --bandwidth 50kbps
 # Dial-up speeds
 glitch --proxy https://api.staging.com --bandwidth 5kb/s
 ```
+
+---
+
+## Stall Injection (Mid-Flight Aborts)
+
+Sometimes connections don't fail immediately. Often, particularly on mobile devices switching networks, a request is accepted, some data is downloaded, and then it simply hangs forever or suddenly drops mid-flight (TCP reset).
+
+Stall Injection lets you simulate this behavior by streaming a configurable percentage of the payload before abruptly hanging or dropping the connection.
+
+*Note: Stall Injection is currently configured via your `glitch.yaml` file.*
+
+```yaml
+stall:
+  rate: 5        # 5% chance of the connection stalling
+  mode: drop     # "drop" (TCP reset) or "hang" (block indefinitely)
+  drop_at: 50    # Stream 50% of the payload before stalling
+```
