@@ -124,7 +124,7 @@ func ParseStatusFlags(vals []string) ([]config.StatusConfig, error) {
 
 		rateStr := strings.TrimSpace(parts[1])
 		rateStr = strings.TrimSuffix(rateStr, "%")
-		
+
 		rate, err := strconv.ParseFloat(rateStr, 64)
 		if err != nil {
 			return nil, fmt.Errorf("invalid status rate %q: %w", parts[1], err)
@@ -156,4 +156,3 @@ func ParseFailRate(val string) (float64, error) {
 
 	return rate, nil
 }
-

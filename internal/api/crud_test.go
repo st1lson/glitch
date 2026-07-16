@@ -13,7 +13,6 @@ import (
 )
 
 func setupTestRouter(t *testing.T) (chi.Router, *storage.JSONStore) {
-	// Create a temporary JSON DB file
 	content := `{
 		"users": [
 			{"id": 1, "name": "Alice"},
@@ -33,7 +32,6 @@ func setupTestRouter(t *testing.T) (chi.Router, *storage.JSONStore) {
 		t.Fatal(err)
 	}
 
-	// Create JSON store
 	store, err := storage.NewJSONStore(tmpfile.Name(), false)
 	if err != nil {
 		t.Fatal(err)

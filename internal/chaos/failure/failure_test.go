@@ -8,10 +8,10 @@ import (
 
 func TestShouldTrigger(t *testing.T) {
 	tests := []struct {
-		name         string
-		cfg          config.FailureConfig
-		wantTrigger  bool
-		wantCode     int
+		name        string
+		cfg         config.FailureConfig
+		wantTrigger bool
+		wantCode    int
 	}{
 		{
 			name: "No failure configured",

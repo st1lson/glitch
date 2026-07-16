@@ -25,7 +25,6 @@ type ChaosInfo struct {
 	Corrupted    bool
 }
 
-// GetChaosInfo retrieves the ChaosInfo attached to the request, or nil if none.
 func GetChaosInfo(r *http.Request) *ChaosInfo {
 	if info, ok := r.Context().Value(chaosContextKey{}).(*ChaosInfo); ok {
 		return info

@@ -37,13 +37,13 @@ type Config struct {
 	Verbose  bool   `yaml:"verbose"`
 	ReadOnly bool   `yaml:"read_only"`
 	NoTUI    bool   `yaml:"no_tui"`
-	
+
 	ActiveProfile string `yaml:"-"`
 
-	Bandwidth string        `yaml:"bandwidth"`
-	Latency   LatencyConfig `yaml:"latency"`
-	Failure   FailureConfig `yaml:"failure"`
-	Stall     StallConfig   `yaml:"stall"`
+	Bandwidth  string           `yaml:"bandwidth"`
+	Latency    LatencyConfig    `yaml:"latency"`
+	Failure    FailureConfig    `yaml:"failure"`
+	Stall      StallConfig      `yaml:"stall"`
 	Corruption CorruptionConfig `yaml:"corruption"`
 }
 
@@ -121,6 +121,7 @@ func DefaultConfig() Config {
 func (c Config) HasChaos() bool {
 	return c.Bandwidth != "" || c.Latency.Enabled() || c.Failure.Enabled() || c.Stall.Enabled() || c.Corruption.Enabled()
 }
+
 // ParseBandwidth parses a bandwidth string into bytes per second.
 // Supports suffixes: kbps, mbps, b/s, kb/s, mb/s.
 func ParseBandwidth(val string) (int, error) {
@@ -149,7 +150,7 @@ func ParseBandwidth(val string) (int, error) {
 	}
 
 	numStr = strings.TrimSpace(numStr)
-	
+
 	rate, err := strconv.ParseFloat(numStr, 64)
 	if err != nil {
 		return 0, fmt.Errorf("invalid bandwidth value %q: %w", val, err)

@@ -33,7 +33,7 @@ func renderMetricsPane(layout Layout, metrics Metrics) (string, int) {
 	// Set the total outer height of metrics box to 10
 	metricsHeight := 10
 	hMetFrame, vMetFrame := metricsBoxStyle.GetFrameSize()
-	
+
 	view := metricsBoxStyle.
 		Width(layout.LeftWidth - hMetFrame).
 		Height(metricsHeight - vMetFrame).
@@ -88,7 +88,7 @@ func renderControlPanelPane(layout Layout, cfg config.Config, actualMetricsHeigh
 
 	// The total height of left column is contentHeight.
 	profHeight := max(layout.ContentHeight-actualMetricsHeight, 5)
-	
+
 	hProfFrame, vProfFrame := profileBoxStyle.GetFrameSize()
 	return profileBoxStyle.
 		Width(layout.LeftWidth - hProfFrame).

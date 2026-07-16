@@ -22,9 +22,9 @@ func ShouldTrigger(cfg config.CorruptionConfig) bool {
 // Writer wraps an http.ResponseWriter to buffer and mutate the response body.
 type Writer struct {
 	http.ResponseWriter
-	buf        bytes.Buffer
-	cfg        config.CorruptionConfig
-	statusCode int
+	buf         bytes.Buffer
+	cfg         config.CorruptionConfig
+	statusCode  int
 	wroteHeader bool
 }
 
@@ -67,9 +67,8 @@ func (c *Writer) Flush() {
 		body = corruptedBody
 	}
 
-	// Update Content-Length since corruption changes the payload size.
 	c.Header().Set("Content-Length", strconv.Itoa(len(body)))
-	
+
 	c.ResponseWriter.WriteHeader(c.statusCode)
 	c.ResponseWriter.Write(body)
 }
@@ -134,7 +133,7 @@ func walkAndMutate(data any, mutator Mutator, depthLeft int) any {
 			keys = append(keys, k)
 		}
 		key := keys[rand.IntN(len(keys))]
-		
+
 		if depthLeft == 1 {
 			// At target depth, pass the whole map to let mutator pick what to do (e.g. drop a key)
 			// Wait, the mutator interface says `Mutate(data any) any`.
@@ -185,5 +184,3 @@ func getMutators(strategies []string) []Mutator {
 	}
 	return active
 }
-
-

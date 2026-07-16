@@ -52,7 +52,6 @@ func (s *JSONStore) Collections() []string {
 	return names
 }
 
-// List returns all items in a collection.
 func (s *JSONStore) List(collection string) ([]map[string]any, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -70,7 +69,6 @@ func (s *JSONStore) List(collection string) ([]map[string]any, error) {
 	return result, nil
 }
 
-// Get returns a single item by ID.
 func (s *JSONStore) Get(collection string, id string) (map[string]any, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -88,7 +86,6 @@ func (s *JSONStore) Get(collection string, id string) (map[string]any, error) {
 	return nil, ErrNotFound
 }
 
-// Create adds a new item to a collection, auto-generating an ID if one is not present.
 // If the collection does not exist, it is created.
 func (s *JSONStore) Create(collection string, item map[string]any) (map[string]any, error) {
 	s.mu.Lock()
@@ -109,7 +106,6 @@ func (s *JSONStore) Create(collection string, item map[string]any) (map[string]a
 	return copyMap(newItem), nil
 }
 
-// Update replaces an existing item by ID with the provided item.
 func (s *JSONStore) Update(collection string, id string, item map[string]any) (map[string]any, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -134,7 +130,6 @@ func (s *JSONStore) Update(collection string, id string, item map[string]any) (m
 	return nil, ErrNotFound
 }
 
-// Patch merges the given fields into an existing item identified by ID.
 func (s *JSONStore) Patch(collection string, id string, fields map[string]any) (map[string]any, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -163,7 +158,6 @@ func (s *JSONStore) Patch(collection string, id string, fields map[string]any) (
 	return nil, ErrNotFound
 }
 
-// Delete removes an item by ID from the specified collection.
 func (s *JSONStore) Delete(collection string, id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

@@ -16,19 +16,13 @@ func NewProxyHandler(targetURL string) (http.Handler, error) {
 		return nil, fmt.Errorf("invalid proxy target URL: %w", err)
 	}
 
-	proxy := httputil.NewSingleHostReverseProxy(parsedURL)
-
-	// Keep a reference to the original director
-	originalDirector := proxy.Director
-	proxy.Director = func(req *http.Request) {
-		originalDirector(req)
-		// Set the Host header to match the target URL,
-		// otherwise many external services will reject the request with a 503 or 404.
-		req.Host = parsedURL.Host
+	proxy := &httputil.ReverseProxy{
+		Rewrite: func(pr *httputil.ProxyRequest) {
+			pr.SetURL(parsedURL)
+			pr.Out.Host = parsedURL.Host
+		},
 	}
 
-	// Glitch is a development tool. Users frequently proxy to local or dev environments
-	// that have self-signed certificates. We skip TLS verification to make this seamless.
 	proxy.Transport = &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		TLSClientConfig: &tls.Config{

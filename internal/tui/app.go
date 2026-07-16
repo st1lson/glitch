@@ -78,7 +78,6 @@ func (m Model) Init() tea.Cmd {
 	return nil
 }
 
-// Update handles incoming terminal events and messages.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -118,7 +117,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case logging.LogEvent:
-		// Process log event
 		m.metrics.TotalRequests++
 
 		if msg.ChaosFailure > 0 || msg.ChaosLatency > 0 || msg.ChaosCorrupted {
@@ -131,7 +129,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.metrics.Successes++
 		}
 
-		// Append to ring buffer
 		m.logs = append(m.logs, msg.Formatted)
 		if len(m.logs) > maxLogs {
 			m.logs = m.logs[1:]
@@ -187,18 +184,14 @@ func (m Model) View() string {
 	hTitleFrame, _ := titleStyle.GetFrameSize()
 	header := titleStyle.Width(m.width - 1 - hTitleFrame).Align(lipgloss.Center).Render(headerStr)
 
-	// Render panes
 	metricsView, actualMetricsHeight := renderMetricsPane(layout, m.metrics)
 	profView := renderControlPanelPane(layout, cfg, actualMetricsHeight)
 	logsView := renderLogsPane(layout, m.logs)
 
-	// Assemble Left Column
 	leftColumn := lipgloss.JoinVertical(lipgloss.Left, metricsView, profView)
 
-	// Assemble Main Content inside Outer Border
 	mainContent := lipgloss.JoinHorizontal(lipgloss.Top, leftColumn, logsView)
 	dashboard := outerStyle.Render(mainContent)
 
-	// Assemble Everything
 	return lipgloss.JoinVertical(lipgloss.Left, header, dashboard)
 }

@@ -18,7 +18,7 @@ func RegisterRoutes(r chi.Router, store storage.Store) {
 	r.Route("/{collection}", func(cr chi.Router) {
 		cr.Get("/", listHandler(store))
 		cr.Post("/", createHandler(store))
-		
+
 		// Item specific routes
 		cr.Get("/{id}", getHandler(store))
 		cr.Put("/{id}", updateHandler(store))

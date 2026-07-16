@@ -12,7 +12,7 @@ import (
 	"github.com/pb33f/libopenapi/renderer"
 )
 
-// NewMockHandler loads an OpenAPI spec from filePath and returns an http.Handler 
+// NewMockHandler loads an OpenAPI spec from filePath and returns an http.Handler
 // that mounts all defined paths and generates mock responses on the fly.
 func NewMockHandler(filePath string) (http.Handler, error) {
 	fileBytes, err := os.ReadFile(filePath)

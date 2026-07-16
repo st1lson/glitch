@@ -9,7 +9,7 @@ import (
 
 func TestThrottledWriter(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	
+
 	// Test: 100 bytes per second limit
 	bps := 100
 	tw := NewWriter(recorder, bps)
@@ -43,7 +43,7 @@ func TestThrottledWriter(t *testing.T) {
 	// 5 iterations of 100ms = ~500ms
 	// Allow some wiggle room for execution time.
 	expectedMinDuration := 400 * time.Millisecond
-	
+
 	if duration < expectedMinDuration {
 		t.Errorf("expected throttle to delay at least %v, took %v", expectedMinDuration, duration)
 	}

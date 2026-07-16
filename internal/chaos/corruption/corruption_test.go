@@ -78,7 +78,7 @@ func TestNullInjector(t *testing.T) {
 
 func TestSyntaxBreaker(t *testing.T) {
 	m := &SyntaxBreaker{}
-	
+
 	validJSON := []byte(`{"a": 1}`)
 	res := m.Mutate(validJSON).([]byte)
 

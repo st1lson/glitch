@@ -23,9 +23,7 @@ func TestNewProxyHandler(t *testing.T) {
 	})
 
 	t.Run("Valid proxying", func(t *testing.T) {
-		// Create a backend test server
 		backendServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Let's actually check the host header against the expected value
 			w.Header().Set("X-Received-Host", r.Host)
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte("backend response"))
@@ -39,7 +37,6 @@ func TestNewProxyHandler(t *testing.T) {
 			t.Fatalf("NewProxyHandler() unexpected error: %v", err)
 		}
 
-		// Create a request to our proxy
 		req := httptest.NewRequest(http.MethodGet, "http://localhost:3000/api/test", nil)
 		// Set a dummy host that isn't the backend
 		req.Host = "localhost:3000"

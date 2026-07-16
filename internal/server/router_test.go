@@ -36,7 +36,6 @@ func TestNewRouter(t *testing.T) {
 			t.Errorf("expected 'api response', got %q", rec.Body.String())
 		}
 
-		// Check CORS headers on normal request
 		if origin := rec.Header().Get("Access-Control-Allow-Origin"); origin != "*" {
 			t.Errorf("expected CORS origin '*', got %q", origin)
 		}

@@ -95,19 +95,16 @@ paths:
 				t.Fatal(err)
 			}
 
-			// Instantiate the mock handler
 			handler, err := NewMockHandler(tmpfile.Name())
 			if err != nil {
 				t.Fatalf("Failed to create mock handler: %v", err)
 			}
 
-			// Test the mounted route
 			req := httptest.NewRequest("GET", "/pets", nil)
 			rr := httptest.NewRecorder()
 
 			handler.ServeHTTP(rr, req)
 
-			// Verify results
 			if status := rr.Code; status != http.StatusOK {
 				t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 			}
@@ -117,7 +114,6 @@ paths:
 				t.Errorf("handler returned wrong content type: got %v want %v", contentType, "application/json")
 			}
 
-			// Ensure the body is valid JSON and matches the array schema
 			var pets []map[string]any
 			if err := json.NewDecoder(rr.Body).Decode(&pets); err != nil {
 				t.Fatalf("Failed to decode JSON response: %v", err)

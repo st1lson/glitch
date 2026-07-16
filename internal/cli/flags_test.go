@@ -57,9 +57,9 @@ func TestParseStatusFlags(t *testing.T) {
 
 func TestParseLatency(t *testing.T) {
 	tests := []struct {
-		input   string
+		input    string
 		wantDist string
-		wantErr bool
+		wantErr  bool
 	}{
 		{"2s", "", false},
 		{"normal:500ms,2s", "normal", false},

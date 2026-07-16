@@ -40,7 +40,7 @@ func TestStallWriter_DropWithContentLength(t *testing.T) {
 	if n != 4 || err != nil {
 		t.Fatalf("first write failed: %d, %v", n, err)
 	}
-	
+
 	if rec.Body.Len() != 4 {
 		t.Errorf("expected 4 bytes written, got %d", rec.Body.Len())
 	}

@@ -64,7 +64,7 @@ func TestEngine_Middleware_Failure(t *testing.T) {
 	}
 
 	info := GetChaosInfo(req)
-	// info will be attached to the request passed to next, but since we short-circuit, 
+	// info will be attached to the request passed to next, but since we short-circuit,
 	// we'd need to extract it from a logger or something. This is fine.
 	_ = info
 }

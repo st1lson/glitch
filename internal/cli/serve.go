@@ -53,7 +53,7 @@ func runServe(cmd *cobra.Command, args []string) error {
 
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	srv := server.New(addr, router)
-	
+
 	errCh := make(chan error, 1)
 	go func() {
 		errCh <- srv.Start()
@@ -81,9 +81,9 @@ func runServe(cmd *cobra.Command, args []string) error {
 	// Gracefully shut down server
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	_ = srv.Shutdown(ctx)
-	
+
 	return nil
 }
 

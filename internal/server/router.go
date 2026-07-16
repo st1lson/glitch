@@ -20,7 +20,6 @@ func NewRouter(state *config.State, apiHandler http.Handler, reporter logging.Ev
 	// CORS — fully permissive for local dev use.
 	r.Use(corsMiddleware)
 
-	// Request logging.
 	r.Use(logging.RequestLogger(state, reporter))
 
 	// Chaos middleware — always mounted so it can be dynamically toggled.
@@ -42,7 +41,6 @@ func corsMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Expose-Headers", "X-Total-Count")
 
-		// Handle preflight requests.
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return

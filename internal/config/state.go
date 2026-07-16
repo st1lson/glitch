@@ -19,14 +19,12 @@ func NewState(initial Config) *State {
 	}
 }
 
-// Get safely retrieves a copy of the current configuration.
 func (s *State) Get() Config {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.cfg
 }
 
-// Update safely mutates the configuration using the provided closure.
 func (s *State) Update(fn func(cfg *Config)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

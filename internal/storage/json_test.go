@@ -18,7 +18,6 @@ func createTempDB(t *testing.T, content string) string {
 }
 
 func TestNewJSONStore(t *testing.T) {
-	// Valid DB
 	content := `{"users": [{"id": 1, "name": "Alice"}]}`
 	path := createTempDB(t, content)
 
@@ -32,14 +31,12 @@ func TestNewJSONStore(t *testing.T) {
 		t.Errorf("expected ['users'], got %v", cols)
 	}
 
-	// Invalid DB
 	invalidPath := createTempDB(t, `{"users": [}`)
 	_, err = NewJSONStore(invalidPath, true)
 	if err == nil {
 		t.Error("expected error parsing invalid JSON")
 	}
 
-	// Missing file
 	_, err = NewJSONStore("/tmp/does/not/exist.json", true)
 	if err == nil {
 		t.Error("expected error for missing file")
@@ -51,46 +48,39 @@ func TestJSONStore_CRUD(t *testing.T) {
 	path := createTempDB(t, content)
 	store, _ := NewJSONStore(path, false)
 
-	// List
 	items, err := store.List("posts")
 	if err != nil || len(items) != 1 {
 		t.Errorf("List failed: %v, items: %v", err, items)
 	}
 
-	// Get
 	item, err := store.Get("posts", "1")
 	if err != nil || item["title"] != "Hello" {
 		t.Errorf("Get failed: %v, item: %v", err, item)
 	}
 
-	// Get Not Found
 	_, err = store.Get("posts", "99")
 	if err != ErrNotFound {
 		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 
-	// Create
 	newItem := map[string]any{"title": "World"}
 	created, err := store.Create("posts", newItem)
 	if err != nil || created["id"] != 2 {
 		t.Errorf("Create failed: %v, item: %v", err, created)
 	}
 
-	// Update
 	updatedItem := map[string]any{"title": "Updated!"}
 	updated, err := store.Update("posts", "1", updatedItem)
 	if err != nil || updated["title"] != "Updated!" || updated["id"] != float64(1) {
 		t.Errorf("Update failed: %v, item: %v", err, updated)
 	}
 
-	// Patch
 	patchFields := map[string]any{"author": "Alice"}
 	patched, err := store.Patch("posts", "1", patchFields)
 	if err != nil || patched["title"] != "Updated!" || patched["author"] != "Alice" {
 		t.Errorf("Patch failed: %v, item: %v", err, patched)
 	}
 
-	// Delete
 	err = store.Delete("posts", "1")
 	if err != nil {
 		t.Errorf("Delete failed: %v", err)

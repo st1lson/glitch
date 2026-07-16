@@ -15,15 +15,15 @@ import (
 
 // LogEvent contains all information about a processed HTTP request.
 type LogEvent struct {
-	Timestamp    time.Time
-	Method       string
-	Path         string
-	StatusCode   int
-	Duration     time.Duration
-	ChaosLatency time.Duration
-	ChaosFailure int
+	Timestamp      time.Time
+	Method         string
+	Path           string
+	StatusCode     int
+	Duration       time.Duration
+	ChaosLatency   time.Duration
+	ChaosFailure   int
 	ChaosCorrupted bool
-	Formatted    string
+	Formatted      string
 }
 
 // EventReporter is an interface for receiving log events asynchronously.

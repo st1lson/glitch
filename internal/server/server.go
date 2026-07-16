@@ -32,7 +32,6 @@ func New(addr string, handler http.Handler) *Server {
 
 // Start begins listening and serving HTTP requests.
 // It returns nil when the server is shut down via Shutdown;
-// any other error from ListenAndServe is returned as-is.
 func (s *Server) Start() error {
 	err := s.httpServer.ListenAndServe()
 	if err == http.ErrServerClosed {

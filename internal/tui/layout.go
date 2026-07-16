@@ -41,12 +41,10 @@ func CalculateLayout(termWidth, termHeight int, headerStr string) Layout {
 	// Extract the physical bounds of the outer dashboard frame
 	hFrame, vFrame := outerStyle.GetFrameSize()
 
-	// Calculate content bounds.
 	// We subtract 1 from width and height as a standard terminal layout safety margin.
 	l.ContentWidth = termWidth - hFrame - 1
 	l.ContentHeight = availHeight - vFrame - 1
 
-	// Compute column widths
 	l.LeftWidth = int(float64(l.ContentWidth) * 0.35)
 	l.RightWidth = l.ContentWidth - l.LeftWidth
 
