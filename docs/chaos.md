@@ -76,3 +76,50 @@ stall:
   mode: drop     # "drop" (TCP reset) or "hang" (block indefinitely)
   drop_at: 50    # Stream 50% of the payload before stalling
 ```
+
+---
+
+## Payload Corruption (Schema Resilience)
+
+It is common for frontends or API clients to crash when the server responds with a payload that doesn't match the expected schema (e.g., missing fields, unexpected types, or null values).
+
+Payload Corruption allows you to simulate these backend schema deviations dynamically. When enabled, Glitch buffers JSON response payloads and applies random mutations to the structure or data before flushing it to the client.
+
+*Note: Payload Corruption is currently configured via your `glitch.yaml` file or a chaos profile.*
+
+### Configuration
+
+```yaml
+corruption:
+  rate: 10              # 10% chance of mutating a JSON response
+  strategies:           # (Optional) List of active mutators. If omitted, all are active.
+    - drop_field
+    - swap_type
+    - inject_null
+    - break_syntax
+  multi: true           # (Optional) If true, applies 2 to 4 mutators per response instead of just 1
+```
+
+### Mutation Strategies
+
+Glitch supports four built-in mutation strategies:
+
+1. **`drop_field`**:
+   - For JSON objects: Removes a random key-value pair from the object.
+   - For JSON arrays: Removes a random element from the array.
+   
+2. **`swap_type`**:
+   - Changes the type of a value at a random depth in the JSON payload:
+     - `string` values are replaced by an integer (`42`).
+     - `number` values (int/float64) are replaced by a string (`"corrupted_string"`).
+     - `boolean` values are replaced by an integer (`1`).
+     - `null` values are replaced by a string (`"not_null"`).
+   
+3. **`inject_null`**:
+   - Replaces a random value (field value or array element) with `null`.
+   
+4. **`break_syntax`**:
+   - Directly corrupts the raw JSON byte buffer:
+     - **Truncation**: Cuts the JSON string in half, returning invalid/incomplete JSON.
+     - **Trailing Comma**: Injects a trailing comma before the closing bracket `]` or brace `}`.
+     - **Unescaped Quote**: Injects an unescaped double quote `"` in the middle of the JSON string.

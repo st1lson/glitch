@@ -9,6 +9,7 @@ Most local development environments are perfect. Your local API resolves in 2ms,
 - **Test Error Boundaries:** Automatically throw 5xx or 4xx errors at random to ensure your client handles failures gracefully.
 - **Test Loading States:** Simulate slow backends using fixed or variable (normal/uniform distribution) latency.
 - **Test Progressive Rendering:** Throttle bandwidth (e.g. `50kbps`) to test how large JSON payloads or images load on poor 3G connections.
+- **Test Schema Resilience (Payload Corruption):** Mutate JSON responses (drop fields, swap types, inject nulls, break syntax) to verify that client applications handle corrupt payloads and API schema drifts without crashing.
 - **Team Alignment:** Share "Chaos Profiles" via YAML so your entire QA and engineering team can test against the exact same degraded network conditions in Cypress or Playwright.
 
 ## Core Engines

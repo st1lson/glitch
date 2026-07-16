@@ -50,7 +50,22 @@ glitch --proxy https://api.staging.com --bandwidth 50kbps
 glitch --proxy https://api.staging.com --bandwidth 5kb/s
 ```
 
-### 4. Shareable Chaos Profiles
+### 4. Payload Corruption (Schema Resilience)
+Verify your frontend's resilience against schema drifts, unexpected null values, or missing fields by corrupting response payloads. Configured via profile or global config, Glitch intercepts JSON payloads and mutates their contents dynamically.
+
+```yaml
+# glitch.yaml
+corruption:
+  rate: 15             # Corrupt 15% of JSON response payloads
+  strategies:          # Optional: choose specific mutators
+    - drop_field       # Drop random field from objects
+    - swap_type        # Change data types of values
+    - inject_null      # Replace value with null
+    - break_syntax     # Mess up raw JSON format
+  multi: true          # Apply multiple mutators at once
+```
+
+### 5. Shareable Chaos Profiles
 Save your worst-case scenarios as YAML files and commit them to your repository (`.glitch/profiles/flaky.yaml`) so your whole team can test against the same chaotic conditions.
 
 ```yaml
@@ -66,6 +81,8 @@ failure:
 stall:
   rate: 5
   mode: drop
+corruption:
+  rate: 10
 ```
 
 Run it instantly:
@@ -128,6 +145,12 @@ stall:
   rate: 5
   mode: drop
   drop_at: 50
+corruption:
+  rate: 10
+  strategies:
+    - drop_field
+    - inject_null
+  multi: false
 ```
 
 Now you can simply run:

@@ -35,6 +35,14 @@ stall:
   rate: 5
   mode: drop
   drop_at: 50
+
+# Payload corruption parameters
+corruption:
+  rate: 10
+  strategies:
+    - drop_field
+    - swap_type
+  multi: true
 ```
 
 Once this file exists, you can just type:
@@ -68,6 +76,9 @@ stall:
   rate: 100
   mode: drop
   drop_at: 10
+corruption:
+  rate: 50
+  multi: true
 ```
 
 To run a profile, simply pass the `--profile` flag:
