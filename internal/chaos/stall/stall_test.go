@@ -27,7 +27,7 @@ func TestStallWriter_DropWithContentLength(t *testing.T) {
 	defer recoverAbort(t, true)
 
 	rec := httptest.NewRecorder()
-	sw := newStallWriter(rec, config.StallModeDrop, 50)
+	sw := NewWriter(rec, config.StallModeDrop, 50)
 
 	// Simulate handler setting Content-Length
 	payload := []byte("1234567890") // 10 bytes
@@ -53,7 +53,7 @@ func TestStallWriter_DropWithoutContentLength(t *testing.T) {
 	defer recoverAbort(t, true)
 
 	rec := httptest.NewRecorder()
-	sw := newStallWriter(rec, config.StallModeDrop, 50)
+	sw := NewWriter(rec, config.StallModeDrop, 50)
 	sw.WriteHeader(http.StatusOK)
 
 	// Threshold for chunked w/ dropAt 50% is 100KB (102400 bytes).

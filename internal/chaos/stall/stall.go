@@ -28,7 +28,7 @@ type Writer struct {
 }
 
 // NewWriter creates a new Writer.
-func NewWriter(w http.ResponseWriter, mode config.StallMode, dropAt int) http.ResponseWriter {
+func NewWriter(w http.ResponseWriter, mode config.StallMode, dropAt float64) http.ResponseWriter {
 	if dropAt <= 0 {
 		dropAt = 50 // default to 50%
 	}

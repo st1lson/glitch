@@ -10,14 +10,14 @@ import (
 	"github.com/st1lson/glitch/internal/config"
 )
 
-func TestShouldCorrupt(t *testing.T) {
+func TestShouldTrigger(t *testing.T) {
 	// Rate 0 should never corrupt
-	if ShouldCorrupt(config.CorruptionConfig{Rate: 0}) {
+	if ShouldTrigger(config.CorruptionConfig{Rate: 0}) {
 		t.Error("Expected false with rate 0")
 	}
 
 	// Rate 100 should always corrupt
-	if !ShouldCorrupt(config.CorruptionConfig{Rate: 100}) {
+	if !ShouldTrigger(config.CorruptionConfig{Rate: 100}) {
 		t.Error("Expected true with rate 100")
 	}
 }
@@ -121,12 +121,12 @@ func TestCorruptionWriter_JSON(t *testing.T) {
 	}
 
 	rec := httptest.NewRecorder()
-	cw := newCorruptionWriter(rec, cfg)
+	cw := NewWriter(rec, cfg)
 
 	cw.Header().Set("Content-Type", "application/json")
 	cw.WriteHeader(http.StatusOK)
 	cw.Write([]byte(`{"a": 1}`))
-	cw.flush()
+	cw.Flush()
 
 	res := rec.Result()
 	if res.StatusCode != http.StatusOK {
@@ -150,12 +150,12 @@ func TestCorruptionWriter_NonJSON(t *testing.T) {
 	}
 
 	rec := httptest.NewRecorder()
-	cw := newCorruptionWriter(rec, cfg)
+	cw := NewWriter(rec, cfg)
 
 	cw.Header().Set("Content-Type", "text/plain")
 	cw.WriteHeader(http.StatusOK)
 	cw.Write([]byte(`{"a": 1}`))
-	cw.flush()
+	cw.Flush()
 
 	res := rec.Result()
 	_ = res

@@ -12,7 +12,7 @@ func TestThrottledWriter(t *testing.T) {
 	
 	// Test: 100 bytes per second limit
 	bps := 100
-	tw := newThrottledWriter(recorder, bps)
+	tw := NewWriter(recorder, bps)
 
 	// Payload is exactly 50 bytes.
 	// We expect this to be written in chunks.

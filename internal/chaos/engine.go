@@ -2,7 +2,6 @@ package chaos
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -72,20 +71,13 @@ func (e *Engine) Middleware(next http.Handler) http.Handler {
 		var rw http.ResponseWriter = w
 		if cfg.Bandwidth != "" {
 			if bps, err := config.ParseBandwidth(cfg.Bandwidth); err == nil && bps > 0 {
-				rw = newThrottledWriter(w, bps)
+				rw = throttle.NewWriter(w, bps)
 			}
-		}
-
-		// Phase 0: Bandwidth Throttling (wrapping the ResponseWriter)
-		if cfg.BandwidthBps > 0 {
-			rw = throttle.NewWriter(rw, cfg.BandwidthBps)
 		}
 
 		// Phase 1: Latency Injection
 		if cfg.Latency.Enabled() {
-			if applied, delay := latency.Inject(cfg.Latency); applied {
-				info.LatencyAdded = delay
-			}
+			info.LatencyAdded = latency.Inject(r.Context(), cfg.Latency)
 		}
 
 		// Phase 2: Failure Injection

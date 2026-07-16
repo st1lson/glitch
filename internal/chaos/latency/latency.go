@@ -10,7 +10,7 @@ import (
 
 // InjectLatency computes the delay duration based on the configured mode, sleeps for
 // that duration (respecting context cancellation), and returns the actual time slept.
-func InjectLatency(ctx context.Context, cfg config.LatencyConfig) time.Duration {
+func Inject(ctx context.Context, cfg config.LatencyConfig) time.Duration {
 	delay := computeDelay(cfg)
 	if delay <= 0 {
 		return 0
