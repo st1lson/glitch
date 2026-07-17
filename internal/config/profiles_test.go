@@ -94,3 +94,40 @@ func TestApplyProfile(t *testing.T) {
 		t.Errorf("expected status 429 override, got %v", cfg.Failure.Statuses)
 	}
 }
+
+func TestBuiltinProfileNames(t *testing.T) {
+	names := BuiltinProfileNames()
+	if len(names) == 0 {
+		t.Error("Expected built-in profile names")
+	}
+}
+
+func TestBuiltinProfileSummaries(t *testing.T) {
+	summaries, err := BuiltinProfileSummaries()
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if len(summaries) == 0 {
+		t.Error("Expected built-in profile summaries")
+	}
+}
+
+func TestProfileSource(t *testing.T) {
+	emptySource := NewProfileSource("")
+	cfg, err := emptySource.Load()
+	if err != nil || cfg != nil {
+		t.Error("Expected nil, nil for empty profile name")
+	}
+
+	mobileSource := NewProfileSource("mobile")
+	cfg, err = mobileSource.Load()
+	if err != nil || cfg == nil {
+		t.Error("Expected config for mobile profile")
+	}
+
+	invalidSource := NewProfileSource("doesnotexist-123456789")
+	cfg, err = invalidSource.Load()
+	if err == nil || cfg != nil {
+		t.Error("Expected error for non-existent profile")
+	}
+}

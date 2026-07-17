@@ -30,6 +30,9 @@ func TestNew_ProxyEngine(t *testing.T) {
 	if len(res) == 0 || res[0] != "Forwarding to http://example.com" {
 		t.Errorf("unexpected resources: %v", res)
 	}
+	if eng.Handler() == nil {
+		t.Errorf("expected non-nil handler")
+	}
 }
 
 func TestNew_OpenAPIEngine(t *testing.T) {
@@ -48,6 +51,13 @@ paths: {}`
 	if eng.Name() != "OpenAPI Mock Server" {
 		t.Errorf("expected OpenAPI Mock Server, got %s", eng.Name())
 	}
+	res := eng.Resources()
+	if len(res) == 0 || res[0] != "Mocking endpoints from "+path {
+		t.Errorf("unexpected resources: %v", res)
+	}
+	if eng.Handler() == nil {
+		t.Errorf("expected non-nil handler")
+	}
 }
 
 func TestNew_JSONEngine(t *testing.T) {
@@ -61,6 +71,13 @@ func TestNew_JSONEngine(t *testing.T) {
 
 	if eng.Name() != "JSON Database" {
 		t.Errorf("expected JSON Database, got %s", eng.Name())
+	}
+	res := eng.Resources()
+	if len(res) != 1 || res[0] != "users" {
+		t.Errorf("unexpected resources: %v", res)
+	}
+	if eng.Handler() == nil {
+		t.Errorf("expected non-nil handler")
 	}
 }
 

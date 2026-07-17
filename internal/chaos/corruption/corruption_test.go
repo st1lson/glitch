@@ -165,3 +165,39 @@ func TestCorruptionWriter_NonJSON(t *testing.T) {
 		t.Error("Expected non-JSON body to be passed through untouched")
 	}
 }
+
+
+func TestCorruptionWriter_WriteNoHeader(t *testing.T) {
+	rec := httptest.NewRecorder()
+	cw := NewWriter(rec, config.CorruptionConfig{Strategies: []string{"inject_null"}})
+	cw.Header().Set("Content-Type", "application/json")
+	cw.Write([]byte(`{"a":1}`))
+	cw.Flush()
+}
+
+func TestWalkAndMutate_Primitive(t *testing.T) {
+	mDrop := &FieldDropper{}
+	if mDrop.Mutate("test") != "test" { t.Error("FieldDropper: expected unchanged") }
+
+	mSwap := &TypeSwapper{}
+	if mSwap.Name() != "swap_type" { t.Error("TypeSwapper: name mismatch") }
+	if mSwap.Mutate(nil) == nil { t.Error("TypeSwapper: expected changed for nil") }
+	
+	mNull := &NullInjector{}
+	if mNull.Mutate(123) != nil { t.Error("NullInjector: expected nil") }
+
+	mBreak := &SyntaxBreaker{}
+	if mBreak.Mutate("not bytes") != "not bytes" { t.Error("SyntaxBreaker: expected unchanged") }
+	
+	validJSON := []byte(`"just a string"`)
+	mBreak.Mutate(validJSON)
+}
+
+func TestTypeSwapper_Primitives(t *testing.T) {
+	m := &TypeSwapper{}
+	m.Mutate(map[string]any{"a": 123.45})
+	m.Mutate(map[string]any{"a": nil})
+	m.Mutate([]any{123.45})
+	m.Mutate([]any{nil})
+}
+
