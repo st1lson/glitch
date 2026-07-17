@@ -46,6 +46,19 @@ type Config struct {
 	Stall      StallConfig      `yaml:"stall"`
 	Corruption CorruptionConfig `yaml:"corruption"`
 	Monkey     MonkeyConfig     `yaml:"monkey"`
+
+	Routes []RouteConfig `yaml:"routes"`
+}
+
+// RouteConfig allows overriding chaos settings for specific endpoints.
+type RouteConfig struct {
+	Path       string            `yaml:"path"`
+	Method     string            `yaml:"method,omitempty"`
+	Bandwidth  *string           `yaml:"bandwidth,omitempty"`
+	Latency    *LatencyConfig    `yaml:"latency,omitempty"`
+	Failure    *FailureConfig    `yaml:"failure,omitempty"`
+	Stall      *StallConfig      `yaml:"stall,omitempty"`
+	Corruption *CorruptionConfig `yaml:"corruption,omitempty"`
 }
 
 // MonkeyConfig controls dynamic chaos phases.
@@ -136,7 +149,7 @@ func DefaultConfig() Config {
 
 // HasChaos returns true if any chaos features are enabled.
 func (c Config) HasChaos() bool {
-	return c.Bandwidth != "" || c.Latency.Enabled() || c.Failure.Enabled() || c.Stall.Enabled() || c.Corruption.Enabled() || c.Monkey.Enabled
+	return c.Bandwidth != "" || c.Latency.Enabled() || c.Failure.Enabled() || c.Stall.Enabled() || c.Corruption.Enabled() || c.Monkey.Enabled || len(c.Routes) > 0
 }
 
 // ParseBandwidth parses a bandwidth string into bytes per second.

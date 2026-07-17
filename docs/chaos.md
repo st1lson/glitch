@@ -147,4 +147,35 @@ monkey:
         fixed: "3s"
       failure:
         rate: 0
+
+---
+
+## Route-Specific Chaos (Partial Degradation)
+
+Real production environments rarely go down entirely; usually, just one microservice (like search or payments) degrades. You can override global chaos settings for specific API endpoints. The most specific path match wins.
+
+*Note: Route-specific chaos is configured via your `glitch.yaml` file.*
+
+### Specificity Scoring
+When multiple routes match an incoming request, Glitch selects the most specific one:
+- **Exact Path Matches** win over wildcard matches.
+- **Longer Wildcard Matches** (e.g. `/api/products/*`) win over shorter wildcard matches (e.g. `*`).
+- **Method-Specific Overrides** (e.g. `method: POST`) win over method-agnostic overrides for the same path.
+
+### Configuration Example
+
+```yaml
+# glitch.yaml
+failure:
+  rate: 0 # Global baseline is stable
+
+routes:
+  - path: "/api/checkout"
+    method: POST
+    failure:
+      rate: 50 # But POSTs to checkout fail 50% of the time
+  - path: "/api/products/*"
+    latency:
+      fixed: "3s" # All product routes are extremely slow
+```
 ```

@@ -43,6 +43,16 @@ corruption:
     - drop_field
     - swap_type
   multi: true
+
+# Route-Specific Overrides
+routes:
+  - path: "/api/checkout"
+    method: POST
+    failure:
+      rate: 50
+  - path: "/api/products/*"
+    latency:
+      fixed: "3s"
 ```
 
 Once this file exists, you can just type:

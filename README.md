@@ -109,6 +109,24 @@ Run it instantly:
 glitch --proxy https://api.example.com --profile flaky
 ```
 
+### 7. Route-Specific Chaos (Partial Degradation)
+Real production environments rarely go down entirely; usually, just one microservice (like search or payments) degrades. You can override global chaos settings for specific API endpoints. The most specific path match wins.
+
+```yaml
+# glitch.yaml
+failure:
+  rate: 0 # Global baseline is stable
+
+routes:
+  - path: "/api/checkout"
+    method: POST
+    failure:
+      rate: 50 # But POSTs to checkout fail 50% of the time
+  - path: "/api/products/*"
+    latency:
+      fixed: "3s" # All product routes are extremely slow
+```
+
 ---
 
 ## 🔌 Core Interceptor Modes
