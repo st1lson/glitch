@@ -69,9 +69,6 @@ func (s *SSEInterceptor) processEvent(event []byte) {
 
 	if s.config.OutOfOrder {
 		maxBuf := s.config.MaxBufferedMessages
-		if maxBuf <= 0 {
-			maxBuf = 100 // default
-		}
 
 		s.msgQueue = append(s.msgQueue, event)
 

@@ -29,12 +29,6 @@ type Writer struct {
 
 // NewWriter creates a new Writer.
 func NewWriter(w http.ResponseWriter, mode config.StallMode, dropAt float64) http.ResponseWriter {
-	if dropAt <= 0 {
-		dropAt = 50 // default to 50%
-	}
-	if mode == "" {
-		mode = config.StallModeDrop // default mode
-	}
 	return &Writer{
 		ResponseWriter: w,
 		mode:           mode,

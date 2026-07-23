@@ -105,6 +105,7 @@ func TestCorruptPayload(t *testing.T) {
 	// Test multi
 	cfgMulti := config.CorruptionConfig{
 		Multi: true,
+		Strategies: []string{"drop_field", "swap_type", "inject_null", "break_syntax"},
 	}
 	resMulti, nameMulti := CorruptPayload(validJSON, cfgMulti)
 	if bytes.Equal(validJSON, resMulti) {

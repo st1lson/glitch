@@ -171,11 +171,6 @@ func getMutators(strategies []string) []Mutator {
 		"break_syntax": &SyntaxBreaker{},
 	}
 
-	if len(strategies) == 0 {
-		// Default: all mutators
-		return []Mutator{allMutators["drop_field"], allMutators["swap_type"], allMutators["inject_null"], allMutators["break_syntax"]}
-	}
-
 	var active []Mutator
 	for _, s := range strategies {
 		if m, ok := allMutators[s]; ok {

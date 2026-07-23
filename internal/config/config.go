@@ -161,6 +161,16 @@ func DefaultConfig() Config {
 	return Config{
 		Port: 3000,
 		Host: "localhost",
+		Stall: StallConfig{
+			Mode:   StallModeDrop,
+			DropAt: 50,
+		},
+		Corruption: CorruptionConfig{
+			Strategies: []string{"drop_field", "swap_type", "inject_null", "break_syntax"},
+		},
+		Realtime: RealtimeConfig{
+			MaxBufferedMessages: 100,
+		},
 	}
 }
 

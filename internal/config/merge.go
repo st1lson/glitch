@@ -38,6 +38,12 @@ func (c *Config) Merge(override *Config) {
 	c.mergeLatency(&override.Latency)
 	c.mergeFailure(&override.Failure)
 	c.mergeCorruption(&override.Corruption)
+	c.mergeStall(&override.Stall)
+	c.mergeMonkey(&override.Monkey)
+	c.mergeRealtime(&override.Realtime)
+	if len(override.Routes) > 0 {
+		c.Routes = override.Routes
+	}
 }
 
 func (c *Config) mergeLatency(override *LatencyConfig) {
@@ -73,5 +79,53 @@ func (c *Config) mergeCorruption(override *CorruptionConfig) {
 	}
 	if override.Multi {
 		c.Corruption.Multi = true
+	}
+}
+
+func (c *Config) mergeStall(override *StallConfig) {
+	if override.Rate > 0 {
+		c.Stall.Rate = override.Rate
+	}
+	if override.Mode != "" {
+		c.Stall.Mode = override.Mode
+	}
+	if override.DropAt > 0 {
+		c.Stall.DropAt = override.DropAt
+	}
+}
+
+func (c *Config) mergeMonkey(override *MonkeyConfig) {
+	if override.Enabled {
+		c.Monkey.Enabled = true
+	}
+	if len(override.Phases) > 0 {
+		c.Monkey.Phases = override.Phases
+	}
+}
+
+func (c *Config) mergeRealtime(override *RealtimeConfig) {
+	if override.Latency.Fixed.Duration > 0 {
+		c.Realtime.Latency.Fixed = override.Latency.Fixed
+	}
+	if override.Latency.Min.Duration > 0 {
+		c.Realtime.Latency.Min = override.Latency.Min
+	}
+	if override.Latency.Max.Duration > 0 {
+		c.Realtime.Latency.Max = override.Latency.Max
+	}
+	if override.Latency.Distribution != "" {
+		c.Realtime.Latency.Distribution = override.Latency.Distribution
+	}
+	if override.DropRate > 0 {
+		c.Realtime.DropRate = override.DropRate
+	}
+	if override.DisconnectRate > 0 {
+		c.Realtime.DisconnectRate = override.DisconnectRate
+	}
+	if override.OutOfOrder {
+		c.Realtime.OutOfOrder = true
+	}
+	if override.MaxBufferedMessages > 0 {
+		c.Realtime.MaxBufferedMessages = override.MaxBufferedMessages
 	}
 }
