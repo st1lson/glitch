@@ -65,7 +65,7 @@ func TestConfig_EnabledMethods(t *testing.T) {
 
 func TestConfig_HasChaos_Detailed(t *testing.T) {
 	c := Config{}
-	c.Bandwidth = "10mbps"
+	c.Bandwidth = Bandwidth{StringValue: "10mbps", BytesPerSecond: 10485760}
 	if !c.HasChaos() {
 		t.Error("HasChaos should be true with Bandwidth")
 	}

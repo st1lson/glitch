@@ -69,8 +69,8 @@ func renderControlPanelPane(layout Layout, cfg config.Config, actualMetricsHeigh
 	b.WriteString(renderRow("Latency Config:", latStr, 16))
 
 	bwStr := "Unlimited"
-	if cfg.Bandwidth != "" {
-		bwStr = cfg.Bandwidth
+	if cfg.Bandwidth.BytesPerSecond > 0 {
+		bwStr = cfg.Bandwidth.StringValue
 	}
 	b.WriteString(renderRow("Bandwidth Limit:", bwStr, 16))
 
@@ -78,7 +78,11 @@ func renderControlPanelPane(layout Layout, cfg config.Config, actualMetricsHeigh
 	if cfg.Corruption.Enabled() {
 		corruptStr = fmt.Sprintf("%.0f%%", cfg.Corruption.Rate)
 		if len(cfg.Corruption.Strategies) > 0 {
-			corruptStr += fmt.Sprintf(" (%s)", strings.Join(cfg.Corruption.Strategies, ", "))
+			strats := make([]string, len(cfg.Corruption.Strategies))
+			for i, s := range cfg.Corruption.Strategies {
+				strats[i] = string(s)
+			}
+			corruptStr += fmt.Sprintf(" (%s)", strings.Join(strats, ", "))
 		}
 	}
 	b.WriteString(renderRow("Corruption:", corruptStr, 16))

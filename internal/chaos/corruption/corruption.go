@@ -163,12 +163,12 @@ func walkAndMutate(data any, mutator Mutator, depthLeft int) any {
 
 // Built-in mutators
 
-func getMutators(strategies []string) []Mutator {
-	allMutators := map[string]Mutator{
-		"drop_field":   &FieldDropper{},
-		"swap_type":    &TypeSwapper{},
-		"inject_null":  &NullInjector{},
-		"break_syntax": &SyntaxBreaker{},
+func getMutators(strategies []config.CorruptionStrategy) []Mutator {
+	allMutators := map[config.CorruptionStrategy]Mutator{
+		config.StrategyDropField:   &FieldDropper{},
+		config.StrategySwapType:    &TypeSwapper{},
+		config.StrategyInjectNull:  &NullInjector{},
+		config.StrategyBreakSyntax: &SyntaxBreaker{},
 	}
 
 	var active []Mutator

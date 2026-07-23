@@ -77,7 +77,7 @@ func TestStallWriter_DropMode(t *testing.T) {
 	sw := NewWriter(rec, "drop", 1) // drop at 1%
 	sw.Header().Set("Content-Length", "100")
 	sw.WriteHeader(http.StatusOK) // parses Content-Length -> totalBytes = 100, threshold = 1
-	
+
 	defer func() {
 		if r := recover(); r != http.ErrAbortHandler {
 			t.Errorf("Expected panic with http.ErrAbortHandler, got %v", r)
@@ -85,4 +85,3 @@ func TestStallWriter_DropMode(t *testing.T) {
 	}()
 	sw.Write([]byte("test test test")) // len > 1, so it will panic
 }
-

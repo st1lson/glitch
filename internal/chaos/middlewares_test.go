@@ -22,7 +22,7 @@ func TestBandwidthMiddleware(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	// Case 2: Enabled
-	eff := EffectiveChaos{Bandwidth: "100kbps"}
+	eff := EffectiveChaos{Bandwidth: config.Bandwidth{StringValue: "100kbps", BytesPerSecond: 102400}}
 	ctx := setEffectiveChaos(req.Context(), eff)
 	req2 := req.WithContext(ctx)
 	rr2 := httptest.NewRecorder()
@@ -51,7 +51,7 @@ func TestCorruptionMiddleware(t *testing.T) {
 	}))
 
 	// Case 1: Enabled
-	eff := EffectiveChaos{Corruption: config.CorruptionConfig{Rate: 100, Strategies: []string{"drop_field"}}}
+	eff := EffectiveChaos{Corruption: config.CorruptionConfig{Rate: 100, Strategies: []config.CorruptionStrategy{config.StrategyDropField}}}
 	req := httptest.NewRequest("GET", "/", nil)
 	ctx := setEffectiveChaos(req.Context(), eff)
 	

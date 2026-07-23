@@ -80,7 +80,12 @@ func (s *FlagSource) Load() (*config.Config, error) {
 	}
 
 	if s.flags.Changed("bandwidth") {
-		cfg.Bandwidth, _ = s.flags.GetString("bandwidth")
+		bwStr, _ := s.flags.GetString("bandwidth")
+		bw, err := config.ParseBandwidthString(bwStr)
+		if err != nil {
+			return nil, fmt.Errorf("parsing --bandwidth: %w", err)
+		}
+		cfg.Bandwidth = bw
 	}
 
 	return &cfg, nil

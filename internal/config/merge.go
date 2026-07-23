@@ -31,7 +31,7 @@ func (c *Config) Merge(override *Config) {
 	if override.ActiveProfile != "" {
 		c.ActiveProfile = override.ActiveProfile
 	}
-	if override.Bandwidth != "" {
+	if override.Bandwidth.BytesPerSecond > 0 {
 		c.Bandwidth = override.Bandwidth
 	}
 

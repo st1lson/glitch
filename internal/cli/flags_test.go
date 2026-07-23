@@ -2,6 +2,7 @@ package cli
 
 import (
 	"testing"
+	"github.com/st1lson/glitch/internal/config"
 )
 
 func TestParseFailRate(t *testing.T) {
@@ -74,7 +75,7 @@ func TestParseLatency(t *testing.T) {
 			t.Errorf("ParseLatency(%q) error = %v, wantErr %v", tt.input, err, tt.wantErr)
 			continue
 		}
-		if !tt.wantErr && got.Distribution != tt.wantDist {
+		if !tt.wantErr && got.Distribution != config.Distribution(tt.wantDist) {
 			t.Errorf("ParseLatency(%q) dist = %v, want %v", tt.input, got.Distribution, tt.wantDist)
 		}
 		if !tt.wantErr && tt.wantDist == "" && got.Fixed.Duration == 0 {

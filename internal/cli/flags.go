@@ -25,7 +25,7 @@ func ParseLatency(val string) (config.LatencyConfig, error) {
 		if dist != "normal" && dist != "uniform" {
 			return cfg, fmt.Errorf("invalid latency distribution %q: must be 'normal' or 'uniform'", dist)
 		}
-		cfg.Distribution = dist
+		cfg.Distribution = config.Distribution(dist)
 		rest := val[idx+1:]
 
 		parts := strings.SplitN(rest, ",", 2)

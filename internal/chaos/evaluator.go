@@ -24,7 +24,7 @@ func setEffectiveChaos(ctx context.Context, eff EffectiveChaos) context.Context 
 
 // EffectiveChaos represents the final chaos settings for a specific request.
 type EffectiveChaos struct {
-	Bandwidth  string
+	Bandwidth  config.Bandwidth
 	Latency    config.LatencyConfig
 	Failure    config.FailureConfig
 	Stall      config.StallConfig

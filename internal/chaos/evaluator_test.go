@@ -35,8 +35,8 @@ func TestMatchPath(t *testing.T) {
 }
 
 func TestEvalChaos(t *testing.T) {
-	bwGlobal := "100kbps"
-	bwOverride := "50kbps"
+	bwGlobal := config.Bandwidth{StringValue: "100kbps", BytesPerSecond: 102400}
+	bwOverride := config.Bandwidth{StringValue: "50kbps", BytesPerSecond: 51200}
 
 	cfg := config.Config{
 		Bandwidth: bwGlobal,
@@ -79,7 +79,7 @@ func TestEvalChaos(t *testing.T) {
 		method       string
 		path         string
 		expectedFail float64
-		expectedBw   string
+		expectedBw   config.Bandwidth
 	}{
 		{
 			name:         "Fallback to lowest wildcard",
@@ -129,11 +129,11 @@ func TestEvalChaos(t *testing.T) {
 
 func TestEvalChaos_EmptyRoutes(t *testing.T) {
 	cfg := config.Config{
-		Bandwidth: "100kbps",
+		Bandwidth: config.Bandwidth{StringValue: "100kbps", BytesPerSecond: 102400},
 	}
 	req := httptest.NewRequest("GET", "/", nil)
 	eff := evalChaos(cfg, req)
-	if eff.Bandwidth != "100kbps" {
+	if eff.Bandwidth.BytesPerSecond != 102400 {
 		t.Errorf("Expected 100kbps")
 	}
 }

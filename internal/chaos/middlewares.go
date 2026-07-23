@@ -9,7 +9,6 @@ import (
 	"github.com/st1lson/glitch/internal/chaos/realtime"
 	"github.com/st1lson/glitch/internal/chaos/stall"
 	"github.com/st1lson/glitch/internal/chaos/throttle"
-	"github.com/st1lson/glitch/internal/config"
 	"strings"
 )
 
@@ -18,10 +17,8 @@ func BandwidthMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			eff, ok := getEffectiveChaos(r.Context())
-			if ok && eff.Bandwidth != "" {
-				if bps, err := config.ParseBandwidth(eff.Bandwidth); err == nil && bps > 0 {
-					w = throttle.NewWriter(w, bps)
-				}
+			if ok && eff.Bandwidth.BytesPerSecond > 0 {
+				w = throttle.NewWriter(w, eff.Bandwidth.BytesPerSecond)
 			}
 			next.ServeHTTP(w, r)
 		})

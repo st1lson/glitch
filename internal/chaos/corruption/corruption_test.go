@@ -91,7 +91,7 @@ func TestSyntaxBreaker(t *testing.T) {
 func TestCorruptPayload(t *testing.T) {
 	validJSON := []byte(`{"nested": {"a": 1}}`)
 	cfg := config.CorruptionConfig{
-		Strategies: []string{"drop_field"},
+		Strategies: []config.CorruptionStrategy{config.StrategyDropField},
 	}
 
 	res, name := CorruptPayload(validJSON, cfg)
@@ -105,7 +105,7 @@ func TestCorruptPayload(t *testing.T) {
 	// Test multi
 	cfgMulti := config.CorruptionConfig{
 		Multi: true,
-		Strategies: []string{"drop_field", "swap_type", "inject_null", "break_syntax"},
+		Strategies: []config.CorruptionStrategy{config.StrategyDropField, config.StrategySwapType, config.StrategyInjectNull, config.StrategyBreakSyntax},
 	}
 	resMulti, nameMulti := CorruptPayload(validJSON, cfgMulti)
 	if bytes.Equal(validJSON, resMulti) {
@@ -118,7 +118,7 @@ func TestCorruptPayload(t *testing.T) {
 
 func TestCorruptionWriter_JSON(t *testing.T) {
 	cfg := config.CorruptionConfig{
-		Strategies: []string{"inject_null"},
+		Strategies: []config.CorruptionStrategy{config.StrategyInjectNull},
 	}
 
 	rec := httptest.NewRecorder()
@@ -147,7 +147,7 @@ func TestCorruptionWriter_JSON(t *testing.T) {
 
 func TestCorruptionWriter_NonJSON(t *testing.T) {
 	cfg := config.CorruptionConfig{
-		Strategies: []string{"inject_null"},
+		Strategies: []config.CorruptionStrategy{config.StrategyInjectNull},
 	}
 
 	rec := httptest.NewRecorder()
@@ -170,7 +170,7 @@ func TestCorruptionWriter_NonJSON(t *testing.T) {
 
 func TestCorruptionWriter_WriteNoHeader(t *testing.T) {
 	rec := httptest.NewRecorder()
-	cw := NewWriter(rec, config.CorruptionConfig{Strategies: []string{"inject_null"}})
+	cw := NewWriter(rec, config.CorruptionConfig{Strategies: []config.CorruptionStrategy{config.StrategyInjectNull}})
 	cw.Header().Set("Content-Type", "application/json")
 	cw.Write([]byte(`{"a":1}`))
 	cw.Flush()

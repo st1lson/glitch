@@ -7,6 +7,64 @@ import (
 	"time"
 )
 
+// Distribution represents the type of latency distribution.
+type Distribution string
+
+const (
+	DistributionNormal  Distribution = "normal"
+	DistributionUniform Distribution = "uniform"
+)
+
+// CorruptionStrategy represents a mutator type.
+type CorruptionStrategy string
+
+const (
+	StrategyDropField   CorruptionStrategy = "drop_field"
+	StrategySwapType    CorruptionStrategy = "swap_type"
+	StrategyInjectNull  CorruptionStrategy = "inject_null"
+	StrategyBreakSyntax CorruptionStrategy = "break_syntax"
+)
+
+// Bandwidth represents a network speed limit.
+type Bandwidth struct {
+	StringValue    string
+	BytesPerSecond int
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler for Bandwidth.
+func (b *Bandwidth) UnmarshalYAML(unmarshal func(any) error) error {
+	var raw string
+	if err := unmarshal(&raw); err != nil {
+		var rawInt int
+		if err2 := unmarshal(&rawInt); err2 == nil {
+			b.StringValue = strconv.Itoa(rawInt)
+			b.BytesPerSecond = rawInt
+			return nil
+		}
+		return err
+	}
+
+	parsed, err := ParseBandwidth(raw)
+	if err != nil {
+		return err
+	}
+	b.StringValue = raw
+	b.BytesPerSecond = parsed
+	return nil
+}
+
+// ParseBandwidthString creates a Bandwidth struct from a string.
+func ParseBandwidthString(val string) (Bandwidth, error) {
+	parsed, err := ParseBandwidth(val)
+	if err != nil {
+		return Bandwidth{}, err
+	}
+	return Bandwidth{
+		StringValue:    val,
+		BytesPerSecond: parsed,
+	}, nil
+}
+
 // Duration wraps time.Duration to support YAML unmarshaling from human-readable
 // strings like "300ms", "2s", "1m30s".
 type Duration struct {
@@ -40,7 +98,7 @@ type Config struct {
 
 	ActiveProfile string `yaml:"-"`
 
-	Bandwidth  string           `yaml:"bandwidth"`
+	Bandwidth  Bandwidth        `yaml:"bandwidth"`
 	Latency    LatencyConfig    `yaml:"latency"`
 	Failure    FailureConfig    `yaml:"failure"`
 	Stall      StallConfig      `yaml:"stall"`
@@ -55,7 +113,7 @@ type Config struct {
 type RouteConfig struct {
 	Path       string            `yaml:"path"`
 	Method     string            `yaml:"method,omitempty"`
-	Bandwidth  *string           `yaml:"bandwidth,omitempty"`
+	Bandwidth  *Bandwidth        `yaml:"bandwidth,omitempty"`
 	Latency    *LatencyConfig    `yaml:"latency,omitempty"`
 	Failure    *FailureConfig    `yaml:"failure,omitempty"`
 	Stall      *StallConfig      `yaml:"stall,omitempty"`
@@ -72,7 +130,7 @@ type MonkeyConfig struct {
 // MonkeyPhase defines the chaos settings for a specific duration.
 type MonkeyPhase struct {
 	Duration   Duration         `yaml:"duration"`
-	Bandwidth  string           `yaml:"bandwidth"`
+	Bandwidth  Bandwidth        `yaml:"bandwidth"`
 	Latency    LatencyConfig    `yaml:"latency"`
 	Failure    FailureConfig    `yaml:"failure"`
 	Stall      StallConfig      `yaml:"stall"`
@@ -102,9 +160,9 @@ func (s StallConfig) Enabled() bool {
 
 // CorruptionConfig controls JSON payload mutation.
 type CorruptionConfig struct {
-	Rate       float64  `yaml:"rate"`       // 0-100 percentage of JSON responses to corrupt
-	Strategies []string `yaml:"strategies"` // which mutators to enable: "drop_field", "swap_type", "inject_null", "break_syntax"
-	Multi      bool     `yaml:"multi"`      // if true, apply multiple random mutators per response instead of just one
+	Rate       float64              `yaml:"rate"`       // 0-100 percentage of JSON responses to corrupt
+	Strategies []CorruptionStrategy `yaml:"strategies"` // which mutators to enable: "drop_field", "swap_type", "inject_null", "break_syntax"
+	Multi      bool                 `yaml:"multi"`      // if true, apply multiple random mutators per response instead of just one
 }
 
 // Enabled returns true if corruption is configured.
@@ -128,10 +186,10 @@ func (r RealtimeConfig) Enabled() bool {
 
 // LatencyConfig controls latency injection.
 type LatencyConfig struct {
-	Fixed        Duration `yaml:"fixed"`
-	Min          Duration `yaml:"min"`
-	Max          Duration `yaml:"max"`
-	Distribution string   `yaml:"distribution"` // "normal" or "uniform"
+	Fixed        Duration     `yaml:"fixed"`
+	Min          Duration     `yaml:"min"`
+	Max          Duration     `yaml:"max"`
+	Distribution Distribution `yaml:"distribution"` // "normal" or "uniform"
 }
 
 // Enabled returns true if any latency injection is configured.
@@ -166,7 +224,7 @@ func DefaultConfig() Config {
 			DropAt: 50,
 		},
 		Corruption: CorruptionConfig{
-			Strategies: []string{"drop_field", "swap_type", "inject_null", "break_syntax"},
+			Strategies: []CorruptionStrategy{StrategyDropField, StrategySwapType, StrategyInjectNull, StrategyBreakSyntax},
 		},
 		Realtime: RealtimeConfig{
 			MaxBufferedMessages: 100,
@@ -176,7 +234,7 @@ func DefaultConfig() Config {
 
 // HasChaos returns true if any chaos features are enabled.
 func (c Config) HasChaos() bool {
-	return c.Bandwidth != "" || c.Latency.Enabled() || c.Failure.Enabled() || c.Stall.Enabled() || c.Corruption.Enabled() || c.Monkey.Enabled || c.Realtime.Enabled() || len(c.Routes) > 0
+	return c.Bandwidth.BytesPerSecond > 0 || c.Latency.Enabled() || c.Failure.Enabled() || c.Stall.Enabled() || c.Corruption.Enabled() || c.Monkey.Enabled || c.Realtime.Enabled() || len(c.Routes) > 0
 }
 
 // ParseBandwidth parses a bandwidth string into bytes per second.
