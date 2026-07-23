@@ -52,6 +52,15 @@ func TestConfig_EnabledMethods(t *testing.T) {
 	if !corr.Enabled() {
 		t.Error("Corruption disabled with config")
 	}
+
+	rt := RealtimeConfig{}
+	if rt.Enabled() {
+		t.Error("Realtime enabled without config")
+	}
+	rt.DropRate = 1
+	if !rt.Enabled() {
+		t.Error("Realtime disabled with config")
+	}
 }
 
 func TestConfig_HasChaos_Detailed(t *testing.T) {
@@ -89,6 +98,12 @@ func TestConfig_HasChaos_Detailed(t *testing.T) {
 	c.Routes = append(c.Routes, RouteConfig{})
 	if !c.HasChaos() {
 		t.Error("HasChaos should be true with Routes")
+	}
+
+	c = Config{}
+	c.Realtime.DropRate = 1
+	if !c.HasChaos() {
+		t.Error("HasChaos should be true with Realtime")
 	}
 }
 

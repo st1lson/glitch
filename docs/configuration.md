@@ -44,6 +44,14 @@ corruption:
     - swap_type
   multi: true
 
+# Real-time settings for WebSockets and SSE
+realtime:
+  latency:
+    fixed: "200ms"
+  drop_rate: 5
+  disconnect_rate: 1
+  out_of_order: false
+
 # Route-Specific Overrides
 routes:
   - path: "/api/checkout"

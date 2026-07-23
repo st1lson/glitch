@@ -46,6 +46,7 @@ type Config struct {
 	Stall      StallConfig      `yaml:"stall"`
 	Corruption CorruptionConfig `yaml:"corruption"`
 	Monkey     MonkeyConfig     `yaml:"monkey"`
+	Realtime   RealtimeConfig   `yaml:"realtime"`
 
 	Routes []RouteConfig `yaml:"routes"`
 }
@@ -59,6 +60,7 @@ type RouteConfig struct {
 	Failure    *FailureConfig    `yaml:"failure,omitempty"`
 	Stall      *StallConfig      `yaml:"stall,omitempty"`
 	Corruption *CorruptionConfig `yaml:"corruption,omitempty"`
+	Realtime   *RealtimeConfig   `yaml:"realtime,omitempty"`
 }
 
 // MonkeyConfig controls dynamic chaos phases.
@@ -75,6 +77,7 @@ type MonkeyPhase struct {
 	Failure    FailureConfig    `yaml:"failure"`
 	Stall      StallConfig      `yaml:"stall"`
 	Corruption CorruptionConfig `yaml:"corruption"`
+	Realtime   RealtimeConfig   `yaml:"realtime"`
 }
 
 // StallMode represents the type of stall injection.
@@ -107,6 +110,20 @@ type CorruptionConfig struct {
 // Enabled returns true if corruption is configured.
 func (c CorruptionConfig) Enabled() bool {
 	return c.Rate > 0
+}
+
+// RealtimeConfig controls WebSocket and SSE chaos.
+type RealtimeConfig struct {
+	Latency             LatencyConfig `yaml:"latency"`
+	DropRate            float64       `yaml:"drop_rate"`             // 0-100 percentage
+	DisconnectRate      float64       `yaml:"disconnect_rate"`       // 0-100 percentage
+	OutOfOrder          bool          `yaml:"out_of_order"`          // Whether to deliver messages out of order
+	MaxBufferedMessages int           `yaml:"max_buffered_messages"` // Maximum messages to buffer for out of order delivery, default 100
+}
+
+// Enabled returns true if realtime chaos is configured.
+func (r RealtimeConfig) Enabled() bool {
+	return r.Latency.Enabled() || r.DropRate > 0 || r.DisconnectRate > 0 || r.OutOfOrder
 }
 
 // LatencyConfig controls latency injection.
@@ -149,7 +166,7 @@ func DefaultConfig() Config {
 
 // HasChaos returns true if any chaos features are enabled.
 func (c Config) HasChaos() bool {
-	return c.Bandwidth != "" || c.Latency.Enabled() || c.Failure.Enabled() || c.Stall.Enabled() || c.Corruption.Enabled() || c.Monkey.Enabled || len(c.Routes) > 0
+	return c.Bandwidth != "" || c.Latency.Enabled() || c.Failure.Enabled() || c.Stall.Enabled() || c.Corruption.Enabled() || c.Monkey.Enabled || c.Realtime.Enabled() || len(c.Routes) > 0
 }
 
 // ParseBandwidth parses a bandwidth string into bytes per second.

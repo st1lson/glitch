@@ -47,6 +47,7 @@ func NewEngine(state *config.State) *Engine {
 			FailureMiddleware(),
 			StallMiddleware(),
 			CorruptionMiddleware(),
+			RealtimeMiddleware(),
 		},
 	}
 }
@@ -71,7 +72,7 @@ func (e *Engine) Middleware(next http.Handler) http.Handler {
 		eff := evalChaos(cfg, r)
 
 		// Secondary fast path: if specific route overrides disabled all chaos.
-		if !eff.Latency.Enabled() && !eff.Failure.Enabled() && eff.Bandwidth == "" && !eff.Corruption.Enabled() && !eff.Stall.Enabled() {
+		if !eff.Latency.Enabled() && !eff.Failure.Enabled() && eff.Bandwidth == "" && !eff.Corruption.Enabled() && !eff.Stall.Enabled() && !eff.Realtime.Enabled() {
 			next.ServeHTTP(w, r)
 			return
 		}

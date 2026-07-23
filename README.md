@@ -65,7 +65,20 @@ corruption:
   multi: true          # Apply multiple mutators at once
 ```
 
-### 5. Chaos Monkey Mode
+### 5. Real-time Chaos (WebSockets & SSE)
+Inject chaos directly into your real-time streams. Simulate packet loss, random disconnects, or out-of-order message delivery for WebSockets and Server-Sent Events.
+
+```yaml
+# glitch.yaml
+realtime:
+  latency:
+    fixed: "500ms"
+  drop_rate: 10
+  disconnect_rate: 5
+  out_of_order: true
+```
+
+### 6. Chaos Monkey Mode
 Instead of static settings, configure Glitch to dynamically change its chaos profile over time. Perfect for testing how your frontend recovers from temporary outages (like Netflix's Chaos Monkey).
 
 ```yaml
@@ -84,7 +97,7 @@ monkey:
         fixed: "3s"
 ```
 
-### 6. Shareable Chaos Profiles
+### 7. Shareable Chaos Profiles
 Save your worst-case scenarios as YAML files and commit them to your repository (`.glitch/profiles/flaky.yaml`) so your whole team can test against the same chaotic conditions.
 
 ```yaml
@@ -109,7 +122,7 @@ Run it instantly:
 glitch --proxy https://api.example.com --profile flaky
 ```
 
-### 7. Route-Specific Chaos (Partial Degradation)
+### 8. Route-Specific Chaos (Partial Degradation)
 Real production environments rarely go down entirely; usually, just one microservice (like search or payments) degrades. You can override global chaos settings for specific API endpoints. The most specific path match wins.
 
 ```yaml

@@ -6,9 +6,11 @@ import (
 	"github.com/st1lson/glitch/internal/chaos/corruption"
 	"github.com/st1lson/glitch/internal/chaos/failure"
 	"github.com/st1lson/glitch/internal/chaos/latency"
+	"github.com/st1lson/glitch/internal/chaos/realtime"
 	"github.com/st1lson/glitch/internal/chaos/stall"
 	"github.com/st1lson/glitch/internal/chaos/throttle"
 	"github.com/st1lson/glitch/internal/config"
+	"strings"
 )
 
 // BandwidthMiddleware injects bandwidth throttling.
@@ -92,4 +94,30 @@ func CorruptionMiddleware() func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// RealtimeMiddleware injects chaos into WebSockets and Server-Sent Events.
+func RealtimeMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			eff, ok := getEffectiveChaos(r.Context())
+			if ok && eff.Realtime.Enabled() {
+				if isWebSocketUpgrade(r) {
+					w = realtime.NewWSHijackInterceptor(r.Context(), w, eff.Realtime)
+				} else if isSSE(r) {
+					w = realtime.NewSSEInterceptor(r.Context(), w, eff.Realtime)
+				}
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func isWebSocketUpgrade(r *http.Request) bool {
+	return strings.Contains(strings.ToLower(r.Header.Get("Connection")), "upgrade") &&
+		strings.EqualFold(r.Header.Get("Upgrade"), "websocket")
+}
+
+func isSSE(r *http.Request) bool {
+	return strings.Contains(r.Header.Get("Accept"), "text/event-stream")
 }

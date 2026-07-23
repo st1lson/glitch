@@ -29,6 +29,7 @@ type EffectiveChaos struct {
 	Failure    config.FailureConfig
 	Stall      config.StallConfig
 	Corruption config.CorruptionConfig
+	Realtime   config.RealtimeConfig
 }
 
 // evalChaos overlays route-specific chaos on top of global chaos, selecting the most specific match.
@@ -39,6 +40,7 @@ func evalChaos(cfg config.Config, r *http.Request) EffectiveChaos {
 		Failure:    cfg.Failure,
 		Stall:      cfg.Stall,
 		Corruption: cfg.Corruption,
+		Realtime:   cfg.Realtime,
 	}
 
 	if len(cfg.Routes) == 0 {
@@ -86,6 +88,9 @@ func evalChaos(cfg config.Config, r *http.Request) EffectiveChaos {
 		}
 		if bestMatch.Corruption != nil {
 			eff.Corruption = *bestMatch.Corruption
+		}
+		if bestMatch.Realtime != nil {
+			eff.Realtime = *bestMatch.Realtime
 		}
 	}
 

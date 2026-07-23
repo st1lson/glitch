@@ -126,6 +126,33 @@ Glitch supports four built-in mutation strategies:
 
 ---
 
+## Real-time Chaos (WebSockets & SSE)
+
+Testing real-time applications is notoriously difficult. Glitch allows you to inject chaos directly into Server-Sent Events (SSE) and WebSocket streams.
+
+*Note: Real-time chaos is currently configured via your `glitch.yaml` file or a chaos profile.*
+
+### Configuration
+
+```yaml
+realtime:
+  latency:
+    fixed: "500ms"          # Add 500ms of latency to each outgoing message
+  drop_rate: 10             # 10% chance of a message being silently dropped
+  disconnect_rate: 5        # 5% chance the connection is abruptly closed
+  out_of_order: true        # Randomize the delivery order of messages
+  max_buffered_messages: 50 # (Optional) How many messages to buffer for out-of-order delivery. Default 100.
+```
+
+### Chaos Features
+
+- **`latency`**: Delays the delivery of individual messages. Supports `fixed`, `min`/`max` ranges, and distributions just like the global latency config.
+- **`drop_rate`**: Simulates packet loss by silently dropping messages before they reach the client.
+- **`disconnect_rate`**: Tests reconnection logic by randomly dropping the entire connection while a stream is active.
+- **`out_of_order`**: Buffers messages and flushes them in a randomized order to simulate race conditions or out-of-order packet delivery.
+
+---
+
 ## Chaos Monkey Mode
 
 Instead of static failure rates and latency, you can configure Glitch to dynamically cycle between different chaos phases over time. This is incredibly useful for testing how your frontend applications recover from network outages or degraded states (e.g., reconnecting to a WebSocket, backoff polling, etc.).
