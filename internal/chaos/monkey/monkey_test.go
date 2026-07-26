@@ -26,7 +26,7 @@ func TestMonkeyRun_AppliesPhases(t *testing.T) {
 		},
 	}
 
-	state := config.NewState(cfg)
+	state := config.NewManager(cfg)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -63,7 +63,7 @@ func TestMonkeyRun_Cancellation(t *testing.T) {
 		},
 	}
 
-	state := config.NewState(cfg)
+	state := config.NewManager(cfg)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -101,7 +101,7 @@ func TestMonkeyRun_DisabledAndReenabled(t *testing.T) {
 		},
 	}
 
-	state := config.NewState(cfg)
+	state := config.NewManager(cfg)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

@@ -33,12 +33,12 @@ func GetChaosInfo(r *http.Request) *ChaosInfo {
 // Engine is the central chaos-engineering component that orchestrates
 // latency injection and failure injection.
 type Engine struct {
-	state *config.State
+	state *config.Manager
 	chain []func(http.Handler) http.Handler
 }
 
 // NewEngine constructs a chaos Engine from the application config state.
-func NewEngine(state *config.State) *Engine {
+func NewEngine(state *config.Manager) *Engine {
 	return &Engine{
 		state: state,
 		chain: []func(http.Handler) http.Handler{
@@ -61,7 +61,8 @@ func (e *Engine) Middleware(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Read current configuration safely.
-		cfg := e.state.Get()
+		scenario := r.Header.Get("X-Glitch-Scenario")
+		cfg := e.state.Resolve(scenario)
 
 		// Fast path: nothing enabled, skip all overhead.
 		if !cfg.HasChaos() {

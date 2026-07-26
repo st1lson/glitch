@@ -10,7 +10,7 @@ import (
 )
 
 func TestDebugLayout(t *testing.T) {
-	state := config.NewState(config.Config{})
+	state := config.NewManager(config.Config{})
 	m := NewModel(state)
 	m.width = 100
 	m.height = 30

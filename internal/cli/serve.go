@@ -11,9 +11,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-
 	"github.com/st1lson/glitch/internal/chaos/monkey"
 	"github.com/st1lson/glitch/internal/config"
+	"github.com/st1lson/glitch/internal/control"
 	"github.com/st1lson/glitch/internal/engine"
 	"github.com/st1lson/glitch/internal/logging"
 	"github.com/st1lson/glitch/internal/server"
@@ -32,7 +32,8 @@ func runServe(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	state := config.NewState(cfg)
+	state := config.NewManager(cfg)
+	gate := control.NewGatekeeper()
 
 	// Create a context for background workers that terminates when the server exits
 	workerCtx, cancelWorker := context.WithCancel(context.Background())
@@ -58,7 +59,7 @@ func runServe(cmd *cobra.Command, args []string) error {
 		printBanner(cfg, eng.Name(), eng.Resources())
 	}
 
-	router := server.NewRouter(state, eng.Handler(), reporter)
+	router := server.NewRouter(state, gate, eng.Handler(), reporter)
 
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	srv := server.New(addr, router)

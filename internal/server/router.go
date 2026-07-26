@@ -7,11 +7,12 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/st1lson/glitch/internal/chaos"
 	"github.com/st1lson/glitch/internal/config"
+	"github.com/st1lson/glitch/internal/control"
 	"github.com/st1lson/glitch/internal/logging"
 )
 
 // NewRouter builds a chi.Router wired with all middleware and API routes.
-func NewRouter(state *config.State, apiHandler http.Handler, reporter logging.EventReporter) chi.Router {
+func NewRouter(state *config.Manager, gate *control.Gatekeeper, apiHandler http.Handler, reporter logging.EventReporter) chi.Router {
 	r := chi.NewRouter()
 
 	// Recovery middleware — catch panics and respond with 500.
@@ -20,14 +21,23 @@ func NewRouter(state *config.State, apiHandler http.Handler, reporter logging.Ev
 	// CORS — fully permissive for local dev use.
 	r.Use(corsMiddleware)
 
-	r.Use(logging.RequestLogger(state, reporter))
+	// Control API — bypasses chaos and pause gate.
+	r.Mount("/_glitch", control.NewHandler(state, gate))
 
-	// Chaos middleware — always mounted so it can be dynamically toggled.
-	engine := chaos.NewEngine(state)
-	r.Use(engine.Middleware)
+	// For the rest of the routes, apply logging, pause gate, and chaos.
+	r.Group(func(r chi.Router) {
+		r.Use(logging.RequestLogger(state, reporter))
+		
+		// Pause gate — blocks non-control requests while paused.
+		r.Use(control.PauseMiddleware(gate))
 
-	// Mount the specific API handler (JSON, Proxy, or OpenAPI)
-	r.Mount("/", apiHandler)
+		// Chaos middleware — always mounted so it can be dynamically toggled.
+		engine := chaos.NewEngine(state)
+		r.Use(engine.Middleware)
+
+		// Mount the specific API handler (JSON, Proxy, or OpenAPI)
+		r.Mount("/", apiHandler)
+	})
 
 	return r
 }

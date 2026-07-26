@@ -58,15 +58,28 @@ type Metrics struct {
 
 // Model represents the Bubbletea application state.
 type Model struct {
-	state   *config.State
+	state   *config.Manager
 	metrics Metrics
 	logs    []string
 	width   int
 	height  int
 }
 
+// App is a wrapper around the bubbletea program.
+type App struct {
+	program *tea.Program
+}
+
+// New creates a new TUI application.
+func New(state *config.Manager, eventChan <-chan logging.LogEvent) *App {
+	m := NewModel(state)
+	return &App{
+		program: tea.NewProgram(m),
+	}
+}
+
 // NewModel creates a new TUI model bound to the provided config state.
-func NewModel(state *config.State) Model {
+func NewModel(state *config.Manager) Model {
 	return Model{
 		state: state,
 		logs:  make([]string, 0, maxLogs),
@@ -139,7 +152,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // cycleProfile loads the next or previous built-in profile.
-func cycleProfile(state *config.State, dir int) {
+func cycleProfile(state *config.Manager, dir int) {
 	names := config.BuiltinProfileNames()
 	if len(names) == 0 {
 		return

@@ -20,7 +20,8 @@ func (m *mockReporter) Report(event LogEvent) {
 }
 
 func TestRequestLogger(t *testing.T) {
-	state := config.NewState(config.Config{})
+	cfg := config.Config{}
+	state := config.NewManager(cfg)
 	reporter := &mockReporter{}
 
 	mw := RequestLogger(state, reporter)
@@ -48,7 +49,7 @@ func TestRequestLogger(t *testing.T) {
 }
 
 func TestRequestLogger_Verbose(t *testing.T) {
-	state := config.NewState(config.Config{Verbose: true})
+	state := config.NewManager(config.Config{Verbose: true})
 
 	mw := RequestLogger(state, nil) // no reporter, prints to stdout
 	handler := mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

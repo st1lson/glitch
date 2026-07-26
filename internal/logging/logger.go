@@ -33,8 +33,8 @@ type EventReporter interface {
 
 // RequestLogger returns a chi-compatible middleware that logs every HTTP request.
 // If an EventReporter is provided, events are broadcasted to it.
-// Otherwise, events are printed directly to stdout.
-func RequestLogger(state *config.State, reporter EventReporter) func(http.Handler) http.Handler {
+// It writes human-readable, colorized logs to stdout or sends structured events to the TUI.
+func RequestLogger(state *config.Manager, reporter EventReporter) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()

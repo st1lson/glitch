@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -27,8 +28,38 @@ const (
 
 // Bandwidth represents a network speed limit.
 type Bandwidth struct {
-	StringValue    string
-	BytesPerSecond int
+	StringValue    string `yaml:"-" json:"-"`
+	BytesPerSecond int    `yaml:"-" json:"-"`
+}
+
+// MarshalJSON implements json.Marshaler for Bandwidth.
+func (b Bandwidth) MarshalJSON() ([]byte, error) {
+	if b.StringValue != "" {
+		return []byte(`"` + b.StringValue + `"`), nil
+	}
+	return []byte(strconv.Itoa(b.BytesPerSecond)), nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler for Bandwidth.
+func (b *Bandwidth) UnmarshalJSON(data []byte) error {
+	var raw string
+	if err := json.Unmarshal(data, &raw); err != nil {
+		var rawInt int
+		if err2 := json.Unmarshal(data, &rawInt); err2 == nil {
+			b.StringValue = strconv.Itoa(rawInt)
+			b.BytesPerSecond = rawInt
+			return nil
+		}
+		return err
+	}
+
+	parsed, err := ParseBandwidth(raw)
+	if err != nil {
+		return err
+	}
+	b.StringValue = raw
+	b.BytesPerSecond = parsed
+	return nil
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler for Bandwidth.
@@ -71,6 +102,26 @@ type Duration struct {
 	time.Duration
 }
 
+// MarshalJSON implements json.Marshaler for Duration.
+func (d Duration) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + d.String() + `"`), nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler for Duration.
+func (d *Duration) UnmarshalJSON(data []byte) error {
+	var raw string
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	parsed, err := time.ParseDuration(raw)
+	if err != nil {
+		return fmt.Errorf("invalid duration %q: %w", raw, err)
+	}
+	d.Duration = parsed
+	return nil
+}
+
 // UnmarshalYAML implements yaml.Unmarshaler for Duration.
 func (d *Duration) UnmarshalYAML(unmarshal func(any) error) error {
 	var raw string
@@ -88,54 +139,54 @@ func (d *Duration) UnmarshalYAML(unmarshal func(any) error) error {
 
 // Config holds all configuration for the Glitch server.
 type Config struct {
-	Port     int    `yaml:"port"`
-	Host     string `yaml:"host"`
-	File     string `yaml:"file"`
-	Proxy    string `yaml:"proxy"`
-	Verbose  bool   `yaml:"verbose"`
-	ReadOnly bool   `yaml:"read_only"`
-	NoTUI    bool   `yaml:"no_tui"`
+	Port     int    `yaml:"port" json:"port"`
+	Host     string `yaml:"host" json:"host"`
+	File     string `yaml:"file" json:"file"`
+	Proxy    string `yaml:"proxy" json:"proxy"`
+	Verbose  bool   `yaml:"verbose" json:"verbose"`
+	ReadOnly bool   `yaml:"read_only" json:"read_only"`
+	NoTUI    bool   `yaml:"no_tui" json:"no_tui"`
 
-	ActiveProfile string `yaml:"-"`
+	ActiveProfile string `yaml:"-" json:"-"`
 
-	Bandwidth  Bandwidth        `yaml:"bandwidth"`
-	Latency    LatencyConfig    `yaml:"latency"`
-	Failure    FailureConfig    `yaml:"failure"`
-	Stall      StallConfig      `yaml:"stall"`
-	Corruption CorruptionConfig `yaml:"corruption"`
-	Monkey     MonkeyConfig     `yaml:"monkey"`
-	Realtime   RealtimeConfig   `yaml:"realtime"`
+	Bandwidth  Bandwidth        `yaml:"bandwidth" json:"bandwidth"`
+	Latency    LatencyConfig    `yaml:"latency" json:"latency"`
+	Failure    FailureConfig    `yaml:"failure" json:"failure"`
+	Stall      StallConfig      `yaml:"stall" json:"stall"`
+	Corruption CorruptionConfig `yaml:"corruption" json:"corruption"`
+	Monkey     MonkeyConfig     `yaml:"monkey" json:"monkey"`
+	Realtime   RealtimeConfig   `yaml:"realtime" json:"realtime"`
 
-	Routes []RouteConfig `yaml:"routes"`
+	Routes []RouteConfig `yaml:"routes" json:"routes"`
 }
 
 // RouteConfig allows overriding chaos settings for specific endpoints.
 type RouteConfig struct {
-	Path       string            `yaml:"path"`
-	Method     string            `yaml:"method,omitempty"`
-	Bandwidth  *Bandwidth        `yaml:"bandwidth,omitempty"`
-	Latency    *LatencyConfig    `yaml:"latency,omitempty"`
-	Failure    *FailureConfig    `yaml:"failure,omitempty"`
-	Stall      *StallConfig      `yaml:"stall,omitempty"`
-	Corruption *CorruptionConfig `yaml:"corruption,omitempty"`
-	Realtime   *RealtimeConfig   `yaml:"realtime,omitempty"`
+	Path       string            `yaml:"path" json:"path"`
+	Method     string            `yaml:"method,omitempty" json:"method,omitempty"`
+	Bandwidth  *Bandwidth        `yaml:"bandwidth,omitempty" json:"bandwidth,omitempty"`
+	Latency    *LatencyConfig    `yaml:"latency,omitempty" json:"latency,omitempty"`
+	Failure    *FailureConfig    `yaml:"failure,omitempty" json:"failure,omitempty"`
+	Stall      *StallConfig      `yaml:"stall,omitempty" json:"stall,omitempty"`
+	Corruption *CorruptionConfig `yaml:"corruption,omitempty" json:"corruption,omitempty"`
+	Realtime   *RealtimeConfig   `yaml:"realtime,omitempty" json:"realtime,omitempty"`
 }
 
 // MonkeyConfig controls dynamic chaos phases.
 type MonkeyConfig struct {
-	Enabled bool          `yaml:"enabled"`
-	Phases  []MonkeyPhase `yaml:"phases"`
+	Enabled bool          `yaml:"enabled" json:"enabled"`
+	Phases  []MonkeyPhase `yaml:"phases" json:"phases"`
 }
 
 // MonkeyPhase defines the chaos settings for a specific duration.
 type MonkeyPhase struct {
-	Duration   Duration         `yaml:"duration"`
-	Bandwidth  Bandwidth        `yaml:"bandwidth"`
-	Latency    LatencyConfig    `yaml:"latency"`
-	Failure    FailureConfig    `yaml:"failure"`
-	Stall      StallConfig      `yaml:"stall"`
-	Corruption CorruptionConfig `yaml:"corruption"`
-	Realtime   RealtimeConfig   `yaml:"realtime"`
+	Duration   Duration         `yaml:"duration" json:"duration"`
+	Bandwidth  Bandwidth        `yaml:"bandwidth" json:"bandwidth"`
+	Latency    LatencyConfig    `yaml:"latency" json:"latency"`
+	Failure    FailureConfig    `yaml:"failure" json:"failure"`
+	Stall      StallConfig      `yaml:"stall" json:"stall"`
+	Corruption CorruptionConfig `yaml:"corruption" json:"corruption"`
+	Realtime   RealtimeConfig   `yaml:"realtime" json:"realtime"`
 }
 
 // StallMode represents the type of stall injection.
@@ -148,9 +199,9 @@ const (
 
 // StallConfig controls mid-flight network stalls and connection drops.
 type StallConfig struct {
-	Rate   float64   `yaml:"rate"`    // 0-100 percentage
-	Mode   StallMode `yaml:"mode"`    // "drop" (TCP reset) or "hang" (block indefinitely)
-	DropAt float64   `yaml:"drop_at"` // 0-100 percentage of payload to stream before stalling (default 50)
+	Rate   float64   `yaml:"rate" json:"rate"`       // 0-100 percentage
+	Mode   StallMode `yaml:"mode" json:"mode"`       // "drop" (TCP reset) or "hang" (block indefinitely)
+	DropAt float64   `yaml:"drop_at" json:"drop_at"` // 0-100 percentage of payload to stream before stalling (default 50)
 }
 
 // Enabled returns true if stall injection is configured.
@@ -160,9 +211,9 @@ func (s StallConfig) Enabled() bool {
 
 // CorruptionConfig controls JSON payload mutation.
 type CorruptionConfig struct {
-	Rate       float64              `yaml:"rate"`       // 0-100 percentage of JSON responses to corrupt
-	Strategies []CorruptionStrategy `yaml:"strategies"` // which mutators to enable: "drop_field", "swap_type", "inject_null", "break_syntax"
-	Multi      bool                 `yaml:"multi"`      // if true, apply multiple random mutators per response instead of just one
+	Rate       float64              `yaml:"rate" json:"rate"`             // 0-100 percentage of JSON responses to corrupt
+	Strategies []CorruptionStrategy `yaml:"strategies" json:"strategies"` // which mutators to enable: "drop_field", "swap_type", "inject_null", "break_syntax"
+	Multi      bool                 `yaml:"multi" json:"multi"`           // if true, apply multiple random mutators per response instead of just one
 }
 
 // Enabled returns true if corruption is configured.
@@ -172,11 +223,11 @@ func (c CorruptionConfig) Enabled() bool {
 
 // RealtimeConfig controls WebSocket and SSE chaos.
 type RealtimeConfig struct {
-	Latency             LatencyConfig `yaml:"latency"`
-	DropRate            float64       `yaml:"drop_rate"`             // 0-100 percentage
-	DisconnectRate      float64       `yaml:"disconnect_rate"`       // 0-100 percentage
-	OutOfOrder          bool          `yaml:"out_of_order"`          // Whether to deliver messages out of order
-	MaxBufferedMessages int           `yaml:"max_buffered_messages"` // Maximum messages to buffer for out of order delivery, default 100
+	Latency             LatencyConfig `yaml:"latency" json:"latency"`
+	DropRate            float64       `yaml:"drop_rate" json:"drop_rate"`                         // 0-100 percentage
+	DisconnectRate      float64       `yaml:"disconnect_rate" json:"disconnect_rate"`             // 0-100 percentage
+	OutOfOrder          bool          `yaml:"out_of_order" json:"out_of_order"`                   // Whether to deliver messages out of order
+	MaxBufferedMessages int           `yaml:"max_buffered_messages" json:"max_buffered_messages"` // Maximum messages to buffer for out of order delivery, default 100
 }
 
 // Enabled returns true if realtime chaos is configured.
@@ -186,10 +237,10 @@ func (r RealtimeConfig) Enabled() bool {
 
 // LatencyConfig controls latency injection.
 type LatencyConfig struct {
-	Fixed        Duration     `yaml:"fixed"`
-	Min          Duration     `yaml:"min"`
-	Max          Duration     `yaml:"max"`
-	Distribution Distribution `yaml:"distribution"` // "normal" or "uniform"
+	Fixed        Duration     `yaml:"fixed" json:"fixed"`
+	Min          Duration     `yaml:"min" json:"min"`
+	Max          Duration     `yaml:"max" json:"max"`
+	Distribution Distribution `yaml:"distribution" json:"distribution"` // "normal" or "uniform"
 }
 
 // Enabled returns true if any latency injection is configured.
@@ -199,8 +250,8 @@ func (l LatencyConfig) Enabled() bool {
 
 // FailureConfig controls failure injection.
 type FailureConfig struct {
-	Rate     float64        `yaml:"rate"` // 0-100 percentage
-	Statuses []StatusConfig `yaml:"statuses"`
+	Rate     float64        `yaml:"rate" json:"rate"` // 0-100 percentage
+	Statuses []StatusConfig `yaml:"statuses" json:"statuses"`
 }
 
 // Enabled returns true if any failure injection is configured.
@@ -210,8 +261,8 @@ func (f FailureConfig) Enabled() bool {
 
 // StatusConfig maps a specific HTTP status code to a failure rate.
 type StatusConfig struct {
-	Code int     `yaml:"code"`
-	Rate float64 `yaml:"rate"` // 0-100 percentage
+	Code int     `yaml:"code" json:"code"`
+	Rate float64 `yaml:"rate" json:"rate"` // 0-100 percentage
 }
 
 // DefaultConfig returns sensible defaults.

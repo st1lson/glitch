@@ -10,7 +10,7 @@ import (
 // Run starts the continuous chaos monkey loop.
 // It applies the configured phases sequentially, overriding the main config's
 // chaos settings. The loop continues until the context is canceled.
-func Run(ctx context.Context, state *config.State) {
+func Run(ctx context.Context, state *config.Manager) {
 	for {
 		cfg := state.Get()
 		if !cfg.Monkey.Enabled || len(cfg.Monkey.Phases) == 0 {

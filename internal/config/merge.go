@@ -46,6 +46,28 @@ func (c *Config) Merge(override *Config) {
 	}
 }
 
+// MergeChaosOnly applies non-zero chaos fields from the override config onto the base Config.
+// It ignores server settings like Port, Host, Proxy, File, etc.
+func (c *Config) MergeChaosOnly(override *Config) {
+	if override == nil {
+		return
+	}
+
+	if override.Bandwidth.BytesPerSecond > 0 {
+		c.Bandwidth = override.Bandwidth
+	}
+
+	c.mergeLatency(&override.Latency)
+	c.mergeFailure(&override.Failure)
+	c.mergeCorruption(&override.Corruption)
+	c.mergeStall(&override.Stall)
+	c.mergeMonkey(&override.Monkey)
+	c.mergeRealtime(&override.Realtime)
+	if len(override.Routes) > 0 {
+		c.Routes = override.Routes
+	}
+}
+
 func (c *Config) mergeLatency(override *LatencyConfig) {
 	if override.Fixed.Duration > 0 {
 		c.Latency.Fixed = override.Fixed
