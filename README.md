@@ -11,6 +11,8 @@ Most local development and E2E testing environments give you a perfect, zero-lat
 
 It wraps your API—either by reverse-proxying your staging environment or mocking it locally—and intentionally breaks things so you can build resilient applications and robust E2E test suites (Cypress, Playwright, etc.).
 
+> **📖 Want to use Glitch in your CI/CD pipeline?** Check out the [E2E Testing Integration Guide](docs/e2e-testing.md) for concrete Playwright and Cypress examples on how to dynamically pause requests and inject failures mid-test!
+
 ---
 
 ## 🌪️ Chaos Engineering (The Fun Part)
