@@ -25,16 +25,16 @@ func NewHandler(cfg *config.Manager, gate *Gatekeeper) http.Handler {
 	r := chi.NewRouter()
 
 	r.Get("/health", h.handleHealth)
-	
+
 	r.Get("/config", h.handleGetConfig)
 	r.Get("/config/baseline", h.handleGetBaseline)
-	
-	r.Post("/rules", h.handlePostRules)
+
+	r.Patch("/rules", h.handlePostRules) // PATCH is semantically more correct since it merges
 	r.Delete("/rules", h.handleDeleteRules)
-	
+
 	r.Get("/profiles", h.handleGetProfiles)
 	r.Post("/profile/{name}", h.handlePostProfile)
-	
+
 	r.Post("/pause", h.handlePause)
 	r.Post("/resume", h.handleResume)
 
@@ -110,7 +110,7 @@ func (h *Handler) handleGetProfiles(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handlePostProfile(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
-	
+
 	profile, err := config.LoadProfile(name)
 	if err != nil {
 		respondError(w, http.StatusNotFound, err.Error(), map[string]interface{}{
@@ -135,7 +135,7 @@ func (h *Handler) handlePause(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	
+
 	h.gate.Pause(scenario, timeout)
 	respondJSON(w, http.StatusOK, map[string]string{"message": "paused"})
 }

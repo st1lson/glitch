@@ -35,13 +35,16 @@ type Bandwidth struct {
 // MarshalJSON implements json.Marshaler for Bandwidth.
 func (b Bandwidth) MarshalJSON() ([]byte, error) {
 	if b.StringValue != "" {
-		return []byte(`"` + b.StringValue + `"`), nil
+		return json.Marshal(b.StringValue)
 	}
 	return []byte(strconv.Itoa(b.BytesPerSecond)), nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler for Bandwidth.
 func (b *Bandwidth) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return nil
+	}
 	var raw string
 	if err := json.Unmarshal(data, &raw); err != nil {
 		var rawInt int
@@ -104,11 +107,17 @@ type Duration struct {
 
 // MarshalJSON implements json.Marshaler for Duration.
 func (d Duration) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + d.String() + `"`), nil
+	if d.Duration == 0 {
+		return []byte(`"0s"`), nil
+	}
+	return json.Marshal(d.Duration.String())
 }
 
 // UnmarshalJSON implements json.Unmarshaler for Duration.
 func (d *Duration) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return nil
+	}
 	var raw string
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err

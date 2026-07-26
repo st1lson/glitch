@@ -64,7 +64,7 @@ func TestHandler_ConfigAndRules(t *testing.T) {
 		},
 	}
 	body, _ := json.Marshal(override)
-	req := httptest.NewRequest(http.MethodPost, "/rules", bytes.NewReader(body))
+	req := httptest.NewRequest(http.MethodPatch, "/rules", bytes.NewReader(body))
 	req.Header.Set("X-Glitch-Scenario", scenario)
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
@@ -216,7 +216,7 @@ func TestHandler_ScenarioIsolation(t *testing.T) {
 		},
 	}
 	bodyA, _ := json.Marshal(overrideA)
-	reqA := httptest.NewRequest(http.MethodPost, "/rules", bytes.NewReader(bodyA))
+	reqA := httptest.NewRequest(http.MethodPatch, "/rules", bytes.NewReader(bodyA))
 	reqA.Header.Set("X-Glitch-Scenario", "scenario-a")
 	rrA := httptest.NewRecorder()
 	handler.ServeHTTP(rrA, reqA)
@@ -235,7 +235,7 @@ func TestHandler_ScenarioIsolation(t *testing.T) {
 		},
 	}
 	bodyB, _ := json.Marshal(overrideB)
-	reqB := httptest.NewRequest(http.MethodPost, "/rules", bytes.NewReader(bodyB))
+	reqB := httptest.NewRequest(http.MethodPatch, "/rules", bytes.NewReader(bodyB))
 	reqB.Header.Set("X-Glitch-Scenario", "scenario-b")
 	rrB := httptest.NewRecorder()
 	handler.ServeHTTP(rrB, reqB)

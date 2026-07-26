@@ -62,6 +62,10 @@ func runServe(cmd *cobra.Command, args []string) error {
 	router := server.NewRouter(state, gate, eng.Handler(), reporter)
 
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	if cfg.Host == "0.0.0.0" || cfg.Host == "" {
+		fmt.Printf("WARNING: Binding to %s exposes the unauthenticated /_glitch control API to the network\n", addr)
+	}
+
 	srv := server.New(addr, router)
 
 	errCh := make(chan error, 1)

@@ -48,6 +48,9 @@ func (c *Config) Merge(override *Config) {
 
 // MergeChaosOnly applies non-zero chaos fields from the override config onto the base Config.
 // It ignores server settings like Port, Host, Proxy, File, etc.
+// Note: This operates as a strict additive overlay. It is not possible to unset
+// a specific chaos rule (e.g., setting latency to 0) via this method. To clear
+// rules, the scenario must be completely reset.
 func (c *Config) MergeChaosOnly(override *Config) {
 	if override == nil {
 		return

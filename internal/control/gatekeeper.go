@@ -65,6 +65,7 @@ func (g *Gatekeeper) Resume(scenario string) {
 			close(state.gate)
 			state.gate = nil
 		}
+		delete(g.states, scenario)
 	}
 }
 
