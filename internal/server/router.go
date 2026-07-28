@@ -27,7 +27,7 @@ func NewRouter(state *config.Manager, gate *control.Gatekeeper, apiHandler http.
 	// For the rest of the routes, apply logging, pause gate, and chaos.
 	r.Group(func(r chi.Router) {
 		r.Use(logging.RequestLogger(state, reporter))
-		
+
 		// Pause gate — blocks non-control requests while paused.
 		r.Use(control.PauseMiddleware(gate))
 
@@ -48,8 +48,11 @@ func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		w.Header().Set("Access-Control-Expose-Headers", "X-Total-Count")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Glitch-Scenario")
+		w.Header().Set("Access-Control-Expose-Headers", "X-Total-Count, X-Glitch-Scenario")
+		if scenario := r.Header.Get("X-Glitch-Scenario"); scenario != "" {
+			w.Header().Set("X-Glitch-Scenario", scenario)
+		}
 
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
