@@ -65,6 +65,35 @@ failure:
 	}
 }
 
+func TestLoadProfile_CustomProfile(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := os.MkdirAll(filepath.Join(".glitch", "profiles"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(".glitch", "profiles", "flaky.yaml"), []byte("name: flaky\nfailure:\n  rate: 25\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(".glitch", "profiles", "ignore.yml"), []byte("name: ignore\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	profile, err := LoadProfile("flaky")
+	if err != nil {
+		t.Fatalf("expected custom profile to load, got %v", err)
+	}
+	if profile.Name != "flaky" || profile.Failure.Rate != 25 {
+		t.Errorf("unexpected custom profile: %+v", profile)
+	}
+
+	names, err := CustomProfileNames()
+	if err != nil {
+		t.Fatalf("expected custom profiles to be listed, got %v", err)
+	}
+	if len(names) != 1 || names[0] != "flaky" {
+		t.Errorf("expected [flaky], got %v", names)
+	}
+}
+
 func TestApplyProfile(t *testing.T) {
 	// Initial clean config
 	cfg := DefaultConfig()

@@ -100,11 +100,15 @@ func (h *Handler) handleDeleteRules(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleGetProfiles(w http.ResponseWriter, r *http.Request) {
-	// In a real implementation, this would also scan the filesystem for custom profiles.
-	// For this version, we just return the built-ins.
+	custom, err := config.CustomProfileNames()
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"builtin": config.BuiltinProfileNames(),
-		"custom":  []string{},
+		"custom":  custom,
 	})
 }
 

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/st1lson/glitch/internal/config"
@@ -167,6 +169,14 @@ func TestHandler_GetBaseline(t *testing.T) {
 }
 
 func TestHandler_Profiles(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := os.MkdirAll(filepath.Join(".glitch", "profiles"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(".glitch", "profiles", "flaky.yaml"), []byte("name: flaky\nfailure:\n  rate: 25\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
 	handler, mgr, _ := setupHandler(t)
 
 	// Get Profiles
@@ -176,6 +186,15 @@ func TestHandler_Profiles(t *testing.T) {
 
 	if rr.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", rr.Code)
+	}
+	var profiles struct {
+		Custom []string `json:"custom"`
+	}
+	if err := json.NewDecoder(rr.Body).Decode(&profiles); err != nil {
+		t.Fatalf("failed to decode profiles: %v", err)
+	}
+	if len(profiles.Custom) != 1 || profiles.Custom[0] != "flaky" {
+		t.Errorf("expected custom profile flaky, got %v", profiles.Custom)
 	}
 
 	// Post Profile (we'll use a builtin one like "bad-wifi")
@@ -191,6 +210,18 @@ func TestHandler_Profiles(t *testing.T) {
 	cfg := mgr.Resolve("test-profile")
 	if cfg.Failure.Rate == 0 && cfg.Latency.Fixed.Duration == 0 {
 		t.Errorf("expected profile to modify config")
+	}
+
+	// Post a discovered custom profile by name.
+	reqCustom := httptest.NewRequest(http.MethodPost, "/profile/flaky", nil)
+	reqCustom.Header.Set("X-Glitch-Scenario", "custom-profile")
+	rrCustom := httptest.NewRecorder()
+	handler.ServeHTTP(rrCustom, reqCustom)
+	if rrCustom.Code != http.StatusOK {
+		t.Fatalf("expected 200 for custom profile, got %d. Body: %s", rrCustom.Code, rrCustom.Body.String())
+	}
+	if cfg := mgr.Resolve("custom-profile"); cfg.Failure.Rate != 25 {
+		t.Errorf("expected custom profile failure rate 25, got %v", cfg.Failure.Rate)
 	}
 
 	// Post Profile Invalid

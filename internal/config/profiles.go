@@ -2,8 +2,12 @@ package config
 
 import (
 	"embed"
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
+	"sort"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -15,6 +19,8 @@ var embeddedProfiles embed.FS
 // builtinProfiles lists the profile names that are embedded in the binary.
 var builtinProfiles = []string{"mobile", "3g", "bad-wifi", "production"}
 
+const customProfilesDir = ".glitch/profiles"
+
 // Profile represents a named set of chaos-engineering settings that can be loaded
 // from a YAML file and applied to a Config.
 type Profile struct {
@@ -25,12 +31,18 @@ type Profile struct {
 }
 
 // LoadProfile loads a chaos profile by name. It first checks the built-in
-// (embedded) profiles, then falls back to treating the name as a file path.
+// (embedded) profiles, then .glitch/profiles, then treats the name as a file path.
 func LoadProfile(name string) (*Profile, error) {
 	// Check if it's a built-in profile name.
 	for _, builtin := range builtinProfiles {
 		if name == builtin {
 			return loadEmbeddedProfile(name)
+		}
+	}
+
+	if !strings.ContainsRune(name, filepath.Separator) {
+		if data, err := os.ReadFile(filepath.Join(customProfilesDir, name+".yaml")); err == nil {
+			return parseProfile(data)
 		}
 	}
 
@@ -41,6 +53,27 @@ func LoadProfile(name string) (*Profile, error) {
 	}
 
 	return parseProfile(data)
+}
+
+// CustomProfileNames returns the names of YAML profiles in .glitch/profiles.
+func CustomProfileNames() ([]string, error) {
+	entries, err := os.ReadDir(customProfilesDir)
+	if errors.Is(err, os.ErrNotExist) {
+		return []string{}, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("reading custom profiles: %w", err)
+	}
+
+	names := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".yaml" {
+			continue
+		}
+		names = append(names, strings.TrimSuffix(entry.Name(), ".yaml"))
+	}
+	sort.Strings(names)
+	return names, nil
 }
 
 // loadEmbeddedProfile reads a profile from the embedded filesystem.
