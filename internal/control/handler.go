@@ -1,6 +1,7 @@
 package control
 
 import (
+	"crypto/subtle"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -24,6 +25,8 @@ func NewHandler(cfg *config.Manager, gate *Gatekeeper) http.Handler {
 
 	r := chi.NewRouter()
 
+	r.Use(authMiddleware(cfg))
+
 	r.Get("/health", h.handleHealth)
 
 	r.Get("/config", h.handleGetConfig)
@@ -39,6 +42,60 @@ func NewHandler(cfg *config.Manager, gate *Gatekeeper) http.Handler {
 	r.Post("/resume", h.handleResume)
 
 	return r
+}
+
+func authMiddleware(cfg *config.Manager) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			globalCfg := cfg.Baseline()
+
+			if globalCfg.InsecureControlAPI {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			if globalCfg.ControlToken != "" {
+				authHeader := r.Header.Get("Authorization")
+				expectedHeader := "Bearer " + globalCfg.ControlToken
+				if len(authHeader) == len(expectedHeader) && subtle.ConstantTimeCompare([]byte(authHeader), []byte(expectedHeader)) == 1 {
+					next.ServeHTTP(w, r)
+					return
+				}
+				respondError(w, http.StatusUnauthorized, "unauthorized control API access")
+				return
+			}
+
+			// No token configured: allow only loopback
+			if isLoopback(r.RemoteAddr) {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			respondError(w, http.StatusUnauthorized, "unauthorized control API access")
+		})
+	}
+}
+
+func isLoopback(remoteAddr string) bool {
+	// RemoteAddr is usually "IP:port"
+	host := remoteAddr
+	for i := len(remoteAddr) - 1; i >= 0; i-- {
+		if remoteAddr[i] == ':' {
+			host = remoteAddr[:i]
+			break
+		}
+	}
+	
+	// Handle IPv6 brackets like "[::1]:port"
+	if len(host) > 2 && host[0] == '[' && host[len(host)-1] == ']' {
+		host = host[1 : len(host)-1]
+	}
+
+	if host == "localhost" || host == "127.0.0.1" || host == "::1" {
+		return true
+	}
+
+	return false
 }
 
 func extractScenario(r *http.Request) string {

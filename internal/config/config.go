@@ -151,10 +151,12 @@ type Config struct {
 	Port     int    `yaml:"port" json:"port"`
 	Host     string `yaml:"host" json:"host"`
 	File     string `yaml:"file" json:"file"`
-	Proxy    string `yaml:"proxy" json:"proxy"`
-	Verbose  bool   `yaml:"verbose" json:"verbose"`
-	ReadOnly bool   `yaml:"read_only" json:"read_only"`
-	NoTUI    bool   `yaml:"no_tui" json:"no_tui"`
+	Proxy              string `yaml:"proxy" json:"proxy"`
+	Verbose            bool   `yaml:"verbose" json:"verbose"`
+	ReadOnly           bool   `yaml:"read_only" json:"read_only"`
+	NoTUI              bool   `yaml:"no_tui" json:"no_tui"`
+	ControlToken       string `yaml:"control_token" json:"control_token"`
+	InsecureControlAPI bool   `yaml:"insecure_control_api" json:"insecure_control_api"`
 
 	ActiveProfile string `yaml:"-" json:"-"`
 

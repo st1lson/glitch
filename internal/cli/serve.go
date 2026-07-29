@@ -62,8 +62,10 @@ func runServe(cmd *cobra.Command, args []string) error {
 	router := server.NewRouter(state, gate, eng.Handler(), reporter)
 
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
-	if cfg.Host == "0.0.0.0" || cfg.Host == "" {
-		fmt.Printf("WARNING: Binding to %s exposes the unauthenticated /_glitch control API to the network\n", addr)
+	isLoopbackBind := cfg.Host == "localhost" || cfg.Host == "127.0.0.1" || cfg.Host == "::1"
+
+	if !isLoopbackBind && cfg.ControlToken == "" && !cfg.InsecureControlAPI {
+		return fmt.Errorf("refusing to expose unauthenticated control API on %s; set --control-token or use --insecure-control-api", cfg.Host)
 	}
 
 	srv := server.New(addr, router)

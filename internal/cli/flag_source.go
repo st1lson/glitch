@@ -45,6 +45,12 @@ func (s *FlagSource) Load() (*config.Config, error) {
 	if s.flags.Changed("proxy") {
 		cfg.Proxy, _ = s.flags.GetString("proxy")
 	}
+	if s.flags.Changed("control-token") {
+		cfg.ControlToken, _ = s.flags.GetString("control-token")
+	}
+	if s.flags.Changed("insecure-control-api") {
+		cfg.InsecureControlAPI, _ = s.flags.GetBool("insecure-control-api")
+	}
 
 	// Positional arguments (Target file)
 	if len(s.args) > 0 {

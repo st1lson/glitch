@@ -34,6 +34,8 @@ func init() {
 	f.Bool("no-tui", false, "disable the interactive dashboard and use standard stdout logging")
 	f.String("proxy", "", "reverse proxy to target URL (e.g. \"http://api.example.com\")")
 	f.String("bandwidth", "", "throttle response bandwidth (e.g. \"50kbps\", \"1mbps\")")
+	f.String("control-token", "", "authentication token required for the /_glitch control API")
+	f.Bool("insecure-control-api", false, "disable authentication on the /_glitch control API")
 }
 
 // Execute runs the root command and returns any error.

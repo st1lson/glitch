@@ -14,8 +14,9 @@ import (
 
 func setupHandler(t *testing.T) (http.Handler, *config.Manager, *Gatekeeper) {
 	initialCfg := config.Config{
-		Host: "localhost",
-		Port: 8080,
+		Host:               "localhost",
+		Port:               8080,
+		InsecureControlAPI: true, // Bypass auth middleware for tests
 	}
 	mgr := config.NewManager(initialCfg)
 	gate := NewGatekeeper()
@@ -291,5 +292,91 @@ func TestHandler_ScenarioIsolation(t *testing.T) {
 	cfgBaseline := mgr.Baseline()
 	if cfgBaseline.Failure.Rate != 0 || len(cfgBaseline.Failure.Statuses) != 0 {
 		t.Errorf("baseline isolation failed, got rate %v, statuses %v", cfgBaseline.Failure.Rate, cfgBaseline.Failure.Statuses)
+	}
+}
+
+func TestAuthMiddleware(t *testing.T) {
+	tests := []struct {
+		name       string
+		remoteAddr string
+		authHeader string
+		insecure   bool
+		token      string
+		wantStatus int
+	}{
+		{
+			name:       "valid token loopback",
+			remoteAddr: "127.0.0.1:12345",
+			authHeader: "Bearer secret",
+			token:      "secret",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "valid token external",
+			remoteAddr: "192.168.1.100:12345",
+			authHeader: "Bearer secret",
+			token:      "secret",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "invalid token loopback",
+			remoteAddr: "127.0.0.1:12345",
+			authHeader: "Bearer wrong",
+			token:      "secret",
+			wantStatus: http.StatusUnauthorized,
+		},
+		{
+			name:       "no token loopback allowed when no token configured",
+			remoteAddr: "127.0.0.1:12345",
+			authHeader: "",
+			token:      "",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "no token external rejected when no token configured",
+			remoteAddr: "192.168.1.100:12345",
+			authHeader: "",
+			token:      "",
+			wantStatus: http.StatusUnauthorized,
+		},
+		{
+			name:       "no token external allowed when insecure API true",
+			remoteAddr: "192.168.1.100:12345",
+			authHeader: "",
+			token:      "",
+			insecure:   true,
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "no token external rejected when token configured",
+			remoteAddr: "192.168.1.100:12345",
+			authHeader: "",
+			token:      "secret",
+			wantStatus: http.StatusUnauthorized,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			initialCfg := config.Config{
+				ControlToken:       tt.token,
+				InsecureControlAPI: tt.insecure,
+			}
+			mgr := config.NewManager(initialCfg)
+			gate := NewGatekeeper()
+			handler := NewHandler(mgr, gate)
+
+			req := httptest.NewRequest(http.MethodGet, "/health", nil)
+			req.RemoteAddr = tt.remoteAddr
+			if tt.authHeader != "" {
+				req.Header.Set("Authorization", tt.authHeader)
+			}
+			rr := httptest.NewRecorder()
+			handler.ServeHTTP(rr, req)
+
+			if rr.Code != tt.wantStatus {
+				t.Errorf("expected status %d, got %d", tt.wantStatus, rr.Code)
+			}
+		})
 	}
 }
