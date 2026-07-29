@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/st1lson/glitch/internal/constants"
 )
 
 // Gatekeeper manages the paused state for requests, scoped by scenario.
@@ -103,7 +105,7 @@ func (g *Gatekeeper) IsPaused(scenario string) bool {
 func PauseMiddleware(gate *Gatekeeper) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			scenario := r.Header.Get("X-Glitch-Scenario")
+			scenario := r.Header.Get(constants.HeaderScenario)
 			if err := gate.Wait(r.Context(), scenario); err != nil {
 				http.Error(w, "request cancelled while paused", http.StatusGatewayTimeout)
 				return

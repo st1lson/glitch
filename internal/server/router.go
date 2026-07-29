@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/st1lson/glitch/internal/chaos"
 	"github.com/st1lson/glitch/internal/config"
+	"github.com/st1lson/glitch/internal/constants"
 	"github.com/st1lson/glitch/internal/control"
 	"github.com/st1lson/glitch/internal/logging"
 )
@@ -22,7 +23,7 @@ func NewRouter(state *config.Manager, gate *control.Gatekeeper, apiHandler http.
 	r.Use(corsMiddleware)
 
 	// Control API — bypasses chaos and pause gate.
-	r.Mount("/_glitch", control.NewHandler(state, gate))
+	r.Mount(constants.ControlRoutePrefix, control.NewHandler(state, gate))
 
 	// For the rest of the routes, apply logging, pause gate, and chaos.
 	r.Group(func(r chi.Router) {
@@ -46,12 +47,12 @@ func NewRouter(state *config.Manager, gate *control.Gatekeeper, apiHandler http.
 // local development. It allows any origin, common methods, and typical headers.
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Glitch-Scenario")
-		w.Header().Set("Access-Control-Expose-Headers", "X-Total-Count, X-Glitch-Scenario")
-		if scenario := r.Header.Get("X-Glitch-Scenario"); scenario != "" {
-			w.Header().Set("X-Glitch-Scenario", scenario)
+		w.Header().Set(constants.HeaderCORSAllowOrigin, "*")
+		w.Header().Set(constants.HeaderCORSAllowMethods, "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		w.Header().Set(constants.HeaderCORSAllowHeaders, constants.HeaderContentType+", "+constants.HeaderAuthorization+", "+constants.HeaderScenario)
+		w.Header().Set(constants.HeaderCORSExposeHeaders, constants.HeaderTotalCount+", "+constants.HeaderScenario)
+		if scenario := r.Header.Get(constants.HeaderScenario); scenario != "" {
+			w.Header().Set(constants.HeaderScenario, scenario)
 		}
 
 		if r.Method == http.MethodOptions {

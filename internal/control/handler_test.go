@@ -10,11 +10,12 @@ import (
 	"testing"
 
 	"github.com/st1lson/glitch/internal/config"
+	"github.com/st1lson/glitch/internal/constants"
 )
 
 func setupHandler(t *testing.T) (http.Handler, *config.Manager, *Gatekeeper) {
 	initialCfg := config.Config{
-		Host:               "localhost",
+		Host:               constants.LocalhostName,
 		Port:               8080,
 		InsecureControlAPI: true, // Bypass auth middleware for tests
 	}
@@ -28,7 +29,7 @@ func TestHandler_Health(t *testing.T) {
 	handler, _, _ := setupHandler(t)
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
-	req.Header.Set("X-Glitch-Scenario", "test-env")
+	req.Header.Set(constants.HeaderScenario, "test-env")
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -68,7 +69,7 @@ func TestHandler_ConfigAndRules(t *testing.T) {
 	}
 	body, _ := json.Marshal(override)
 	req := httptest.NewRequest(http.MethodPatch, "/rules", bytes.NewReader(body))
-	req.Header.Set("X-Glitch-Scenario", scenario)
+	req.Header.Set(constants.HeaderScenario, scenario)
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
 
@@ -83,7 +84,7 @@ func TestHandler_ConfigAndRules(t *testing.T) {
 
 	// 2. Get Config
 	req2 := httptest.NewRequest(http.MethodGet, "/config", nil)
-	req2.Header.Set("X-Glitch-Scenario", scenario)
+	req2.Header.Set(constants.HeaderScenario, scenario)
 	rr2 := httptest.NewRecorder()
 	handler.ServeHTTP(rr2, req2)
 
@@ -101,7 +102,7 @@ func TestHandler_ConfigAndRules(t *testing.T) {
 
 	// 3. Delete Rules
 	req3 := httptest.NewRequest(http.MethodDelete, "/rules", nil)
-	req3.Header.Set("X-Glitch-Scenario", scenario)
+	req3.Header.Set(constants.HeaderScenario, scenario)
 	rr3 := httptest.NewRecorder()
 	handler.ServeHTTP(rr3, req3)
 
@@ -121,7 +122,7 @@ func TestHandler_PauseResume(t *testing.T) {
 
 	// Pause
 	req := httptest.NewRequest(http.MethodPost, "/pause?timeout=100ms", nil)
-	req.Header.Set("X-Glitch-Scenario", scenario)
+	req.Header.Set(constants.HeaderScenario, scenario)
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
 
@@ -135,7 +136,7 @@ func TestHandler_PauseResume(t *testing.T) {
 
 	// Resume
 	req2 := httptest.NewRequest(http.MethodPost, "/resume", nil)
-	req2.Header.Set("X-Glitch-Scenario", scenario)
+	req2.Header.Set(constants.HeaderScenario, scenario)
 	rr2 := httptest.NewRecorder()
 	handler.ServeHTTP(rr2, req2)
 
@@ -200,7 +201,7 @@ func TestHandler_Profiles(t *testing.T) {
 
 	// Post Profile (we'll use a builtin one like "bad-wifi")
 	req2 := httptest.NewRequest(http.MethodPost, "/profile/bad-wifi", nil)
-	req2.Header.Set("X-Glitch-Scenario", "test-profile")
+	req2.Header.Set(constants.HeaderScenario, "test-profile")
 	rr2 := httptest.NewRecorder()
 	handler.ServeHTTP(rr2, req2)
 
@@ -215,7 +216,7 @@ func TestHandler_Profiles(t *testing.T) {
 
 	// Post a discovered custom profile by name.
 	reqCustom := httptest.NewRequest(http.MethodPost, "/profile/flaky", nil)
-	reqCustom.Header.Set("X-Glitch-Scenario", "custom-profile")
+	reqCustom.Header.Set(constants.HeaderScenario, "custom-profile")
 	rrCustom := httptest.NewRecorder()
 	handler.ServeHTTP(rrCustom, reqCustom)
 	if rrCustom.Code != http.StatusOK {
@@ -249,7 +250,7 @@ func TestHandler_ScenarioIsolation(t *testing.T) {
 	}
 	bodyA, _ := json.Marshal(overrideA)
 	reqA := httptest.NewRequest(http.MethodPatch, "/rules", bytes.NewReader(bodyA))
-	reqA.Header.Set("X-Glitch-Scenario", "scenario-a")
+	reqA.Header.Set(constants.HeaderScenario, "scenario-a")
 	rrA := httptest.NewRecorder()
 	handler.ServeHTTP(rrA, reqA)
 
@@ -268,7 +269,7 @@ func TestHandler_ScenarioIsolation(t *testing.T) {
 	}
 	bodyB, _ := json.Marshal(overrideB)
 	reqB := httptest.NewRequest(http.MethodPatch, "/rules", bytes.NewReader(bodyB))
-	reqB.Header.Set("X-Glitch-Scenario", "scenario-b")
+	reqB.Header.Set(constants.HeaderScenario, "scenario-b")
 	rrB := httptest.NewRecorder()
 	handler.ServeHTTP(rrB, reqB)
 
@@ -369,7 +370,7 @@ func TestAuthMiddleware(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/health", nil)
 			req.RemoteAddr = tt.remoteAddr
 			if tt.authHeader != "" {
-				req.Header.Set("Authorization", tt.authHeader)
+				req.Header.Set(constants.HeaderAuthorization, tt.authHeader)
 			}
 			rr := httptest.NewRecorder()
 			handler.ServeHTTP(rr, req)

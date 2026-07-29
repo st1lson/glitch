@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/st1lson/glitch/internal/config"
+	"github.com/st1lson/glitch/internal/constants"
 	"github.com/st1lson/glitch/internal/control"
 	"github.com/st1lson/glitch/internal/logging"
 )
@@ -48,7 +49,7 @@ func TestNewRouter(t *testing.T) {
 		req := httptest.NewRequest(http.MethodOptions, "/test", nil)
 		req.Header.Set("Origin", "http://localhost:5173")
 		req.Header.Set("Access-Control-Request-Method", http.MethodGet)
-		req.Header.Set("Access-Control-Request-Headers", "X-Glitch-Scenario")
+		req.Header.Set("Access-Control-Request-Headers", constants.HeaderScenario)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -63,7 +64,7 @@ func TestNewRouter(t *testing.T) {
 		if methods := rec.Header().Get("Access-Control-Allow-Methods"); methods == "" {
 			t.Errorf("expected Access-Control-Allow-Methods header to be set")
 		}
-		if headers := rec.Header().Get("Access-Control-Allow-Headers"); !strings.Contains(headers, "X-Glitch-Scenario") {
+		if headers := rec.Header().Get("Access-Control-Allow-Headers"); !strings.Contains(headers, constants.HeaderScenario) {
 			t.Errorf("expected scenario header to be allowed, got %q", headers)
 		}
 	})
@@ -71,7 +72,7 @@ func TestNewRouter(t *testing.T) {
 	t.Run("CORS Scenario Header", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		req.Header.Set("Origin", "http://localhost:5173")
-		req.Header.Set("X-Glitch-Scenario", "browser-test")
+		req.Header.Set(constants.HeaderScenario, "browser-test")
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -79,10 +80,10 @@ func TestNewRouter(t *testing.T) {
 		if rec.Code != http.StatusOK {
 			t.Errorf("expected 200 OK, got %v", rec.Code)
 		}
-		if scenario := rec.Header().Get("X-Glitch-Scenario"); scenario != "browser-test" {
+		if scenario := rec.Header().Get(constants.HeaderScenario); scenario != "browser-test" {
 			t.Errorf("expected scenario header to be echoed, got %q", scenario)
 		}
-		if headers := rec.Header().Get("Access-Control-Expose-Headers"); !strings.Contains(headers, "X-Glitch-Scenario") {
+		if headers := rec.Header().Get("Access-Control-Expose-Headers"); !strings.Contains(headers, constants.HeaderScenario) {
 			t.Errorf("expected scenario header to be exposed, got %q", headers)
 		}
 	})
@@ -93,7 +94,7 @@ func TestNewRouter(t *testing.T) {
 
 		router.ServeHTTP(rec, req)
 
-		if scenario := rec.Header().Get("X-Glitch-Scenario"); scenario != "" {
+		if scenario := rec.Header().Get(constants.HeaderScenario); scenario != "" {
 			t.Errorf("expected no scenario response header, got %q", scenario)
 		}
 	})

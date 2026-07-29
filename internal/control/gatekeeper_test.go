@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/st1lson/glitch/internal/constants"
 )
 
 func TestGatekeeper_PauseResume(t *testing.T) {
@@ -124,7 +126,7 @@ func TestPauseMiddleware(t *testing.T) {
 
 	// Test 1: Normal request (not paused)
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	req.Header.Set("X-Glitch-Scenario", scenario)
+	req.Header.Set(constants.HeaderScenario, scenario)
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
 	
@@ -135,7 +137,7 @@ func TestPauseMiddleware(t *testing.T) {
 	// Test 2: Request while paused with cancellation
 	g.Pause(scenario, 0)
 	req2 := httptest.NewRequest(http.MethodGet, "/", nil)
-	req2.Header.Set("X-Glitch-Scenario", scenario)
+	req2.Header.Set(constants.HeaderScenario, scenario)
 	
 	// Create a cancellable context for the request
 	ctx, cancel := context.WithCancel(context.Background())
@@ -157,7 +159,7 @@ func TestPauseMiddleware(t *testing.T) {
 	// Test 3: Unpaused request after being paused
 	g.Resume(scenario)
 	req3 := httptest.NewRequest(http.MethodGet, "/", nil)
-	req3.Header.Set("X-Glitch-Scenario", scenario)
+	req3.Header.Set(constants.HeaderScenario, scenario)
 	rr3 := httptest.NewRecorder()
 	handler.ServeHTTP(rr3, req3)
 	

@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/st1lson/glitch/internal/config"
+	"github.com/st1lson/glitch/internal/constants"
 )
 
 // Handler provides the HTTP control API for Glitch.
@@ -55,8 +56,8 @@ func authMiddleware(cfg *config.Manager) func(http.Handler) http.Handler {
 			}
 
 			if globalCfg.ControlToken != "" {
-				authHeader := r.Header.Get("Authorization")
-				expectedHeader := "Bearer " + globalCfg.ControlToken
+				authHeader := r.Header.Get(constants.HeaderAuthorization)
+				expectedHeader := constants.BearerPrefix + globalCfg.ControlToken
 				if len(authHeader) == len(expectedHeader) && subtle.ConstantTimeCompare([]byte(authHeader), []byte(expectedHeader)) == 1 {
 					next.ServeHTTP(w, r)
 					return
@@ -91,7 +92,7 @@ func isLoopback(remoteAddr string) bool {
 		host = host[1 : len(host)-1]
 	}
 
-	if host == "localhost" || host == "127.0.0.1" || host == "::1" {
+	if host == constants.LocalhostName || host == constants.LocalhostIPv4 || host == constants.LocalhostIPv6 {
 		return true
 	}
 
@@ -99,11 +100,11 @@ func isLoopback(remoteAddr string) bool {
 }
 
 func extractScenario(r *http.Request) string {
-	return r.Header.Get("X-Glitch-Scenario")
+	return r.Header.Get(constants.HeaderScenario)
 }
 
 func respondJSON(w http.ResponseWriter, status int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(constants.HeaderContentType, constants.ContentTypeJSON)
 	w.WriteHeader(status)
 	if data != nil {
 		_ = json.NewEncoder(w).Encode(data)

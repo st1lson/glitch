@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/st1lson/glitch/internal/chaos/monkey"
 	"github.com/st1lson/glitch/internal/config"
+	"github.com/st1lson/glitch/internal/constants"
 	"github.com/st1lson/glitch/internal/control"
 	"github.com/st1lson/glitch/internal/engine"
 	"github.com/st1lson/glitch/internal/logging"
@@ -62,7 +63,7 @@ func runServe(cmd *cobra.Command, args []string) error {
 	router := server.NewRouter(state, gate, eng.Handler(), reporter)
 
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
-	isLoopbackBind := cfg.Host == "localhost" || cfg.Host == "127.0.0.1" || cfg.Host == "::1"
+	isLoopbackBind := cfg.Host == constants.LocalhostName || cfg.Host == constants.LocalhostIPv4 || cfg.Host == constants.LocalhostIPv6
 
 	if !isLoopbackBind && cfg.ControlToken == "" && !cfg.InsecureControlAPI {
 		return fmt.Errorf("refusing to expose unauthenticated control API on %s; set --control-token or use --insecure-control-api", cfg.Host)

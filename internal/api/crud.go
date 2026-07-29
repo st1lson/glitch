@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/st1lson/glitch/internal/constants"
 	"github.com/st1lson/glitch/internal/storage"
 )
 
@@ -30,7 +31,7 @@ func listHandler(store storage.Store) http.HandlerFunc {
 		// Apply filtering, sorting, and pagination.
 		result, total := ApplyQuery(items, r.URL.Query())
 
-		w.Header().Set("X-Total-Count", strconv.Itoa(total))
+		w.Header().Set(constants.HeaderTotalCount, strconv.Itoa(total))
 		writeJSON(w, http.StatusOK, result)
 	}
 }
@@ -134,7 +135,7 @@ func deleteHandler(store storage.Store) http.HandlerFunc {
 
 // writeJSON marshals data as JSON and writes it with the given status code.
 func writeJSON(w http.ResponseWriter, status int, data any) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(constants.HeaderContentType, constants.ContentTypeJSON)
 	w.WriteHeader(status)
 
 	if err := json.NewEncoder(w).Encode(data); err != nil {
@@ -145,7 +146,7 @@ func writeJSON(w http.ResponseWriter, status int, data any) {
 
 // writeError writes a JSON error response.
 func writeError(w http.ResponseWriter, status int, message string) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(constants.HeaderContentType, constants.ContentTypeJSON)
 	w.WriteHeader(status)
 
 	resp := map[string]any{

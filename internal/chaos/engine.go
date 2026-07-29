@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/st1lson/glitch/internal/config"
+	"github.com/st1lson/glitch/internal/constants"
 )
 
 // chaosContextKey is an unexported type used as the context key for ChaosInfo,
@@ -61,7 +62,7 @@ func (e *Engine) Middleware(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Read current configuration safely.
-		scenario := r.Header.Get("X-Glitch-Scenario")
+		scenario := r.Header.Get(constants.HeaderScenario)
 		cfg := e.state.Resolve(scenario)
 
 		// Fast path: nothing enabled, skip all overhead.
