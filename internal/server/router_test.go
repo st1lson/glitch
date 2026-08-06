@@ -10,6 +10,7 @@ import (
 	"github.com/st1lson/glitch/internal/constants"
 	"github.com/st1lson/glitch/internal/control"
 	"github.com/st1lson/glitch/internal/logging"
+	"github.com/st1lson/glitch/internal/reporting"
 )
 
 type dummyReporter struct{}
@@ -19,13 +20,14 @@ func (d *dummyReporter) Report(event logging.LogEvent) {}
 func TestNewRouter(t *testing.T) {
 	state := config.NewManager(config.DefaultConfig())
 	gate := control.NewGatekeeper()
+	reporter := &dummyReporter{}
+	reports := reporting.NewReportManager(state)
 	apiHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("api response"))
 	})
 
-	reporter := &dummyReporter{}
-	router := NewRouter(state, gate, apiHandler, reporter)
+	router := NewRouter(state, gate, apiHandler, reporter, reports)
 
 	t.Run("Normal Request", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)

@@ -51,6 +51,12 @@ func (s *FlagSource) Load() (*config.Config, error) {
 	if s.flags.Changed("insecure-control-api") {
 		cfg.InsecureControlAPI, _ = s.flags.GetBool("insecure-control-api")
 	}
+	if s.flags.Changed("report") {
+		cfg.ReportPath, _ = s.flags.GetString("report")
+	}
+	if s.flags.Changed("report-format") {
+		cfg.ReportFormat, _ = s.flags.GetString("report-format")
+	}
 
 	// Positional arguments (Target file)
 	if len(s.args) > 0 {

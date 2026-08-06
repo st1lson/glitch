@@ -11,6 +11,7 @@ import (
 
 	"github.com/st1lson/glitch/internal/config"
 	"github.com/st1lson/glitch/internal/constants"
+	"github.com/st1lson/glitch/internal/reporting"
 )
 
 func setupHandler(t *testing.T) (http.Handler, *config.Manager, *Gatekeeper) {
@@ -21,7 +22,8 @@ func setupHandler(t *testing.T) (http.Handler, *config.Manager, *Gatekeeper) {
 	}
 	mgr := config.NewManager(initialCfg)
 	gate := NewGatekeeper()
-	handler := NewHandler(mgr, gate)
+	reports := reporting.NewReportManager(mgr)
+	handler := NewHandler(mgr, gate, reports)
 	return handler, mgr, gate
 }
 
@@ -365,7 +367,8 @@ func TestAuthMiddleware(t *testing.T) {
 			}
 			mgr := config.NewManager(initialCfg)
 			gate := NewGatekeeper()
-			handler := NewHandler(mgr, gate)
+			reports := reporting.NewReportManager(mgr)
+			handler := NewHandler(mgr, gate, reports)
 
 			req := httptest.NewRequest(http.MethodGet, "/health", nil)
 			req.RemoteAddr = tt.remoteAddr

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/st1lson/glitch/internal/constants"
 )
 
 // Version is set at build time via ldflags.
@@ -36,6 +37,8 @@ func init() {
 	f.String("bandwidth", "", "throttle response bandwidth (e.g. \"50kbps\", \"1mbps\")")
 	f.String("control-token", "", "authentication token required for the /_glitch control API")
 	f.Bool("insecure-control-api", false, "disable authentication on the /_glitch control API")
+	f.String("report", "", "write scenario reports to the specified file path on shutdown")
+	f.String("report-format", constants.FormatJSON, "format of the report file (\"json\" or \"junit\")")
 }
 
 // Execute runs the root command and returns any error.

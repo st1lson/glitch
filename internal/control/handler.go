@@ -9,19 +9,22 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/st1lson/glitch/internal/config"
 	"github.com/st1lson/glitch/internal/constants"
+	"github.com/st1lson/glitch/internal/reporting"
 )
 
 // Handler provides the HTTP control API for Glitch.
 type Handler struct {
-	cfg  *config.Manager
-	gate *Gatekeeper
+	cfg     *config.Manager
+	gate    *Gatekeeper
+	reports *reporting.ReportManager
 }
 
 // NewHandler creates a new control API handler.
-func NewHandler(cfg *config.Manager, gate *Gatekeeper) http.Handler {
+func NewHandler(cfg *config.Manager, gate *Gatekeeper, reports *reporting.ReportManager) http.Handler {
 	h := &Handler{
-		cfg:  cfg,
-		gate: gate,
+		cfg:     cfg,
+		gate:    gate,
+		reports: reports,
 	}
 
 	r := chi.NewRouter()
@@ -41,6 +44,9 @@ func NewHandler(cfg *config.Manager, gate *Gatekeeper) http.Handler {
 
 	r.Post("/pause", h.handlePause)
 	r.Post("/resume", h.handleResume)
+
+	r.Get("/report", h.handleGetReport)
+	r.Get("/scenarios/{id}/report", h.handleGetScenarioReport)
 
 	return r
 }
@@ -206,4 +212,19 @@ func (h *Handler) handleResume(w http.ResponseWriter, r *http.Request) {
 	scenario := extractScenario(r)
 	h.gate.Resume(scenario)
 	respondJSON(w, http.StatusOK, map[string]string{"message": "resumed"})
+}
+
+func (h *Handler) handleGetReport(w http.ResponseWriter, r *http.Request) {
+	reports := h.reports.GetAllReports()
+	respondJSON(w, http.StatusOK, reports)
+}
+
+func (h *Handler) handleGetScenarioReport(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	report, ok := h.reports.GetReport(id)
+	if !ok {
+		respondError(w, http.StatusNotFound, "scenario not found")
+		return
+	}
+	respondJSON(w, http.StatusOK, report)
 }

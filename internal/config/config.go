@@ -160,6 +160,9 @@ type Config struct {
 
 	Seed     *int64 `yaml:"seed,omitempty" json:"seed,omitempty"`
 
+	ReportPath   string `yaml:"report_path,omitempty" json:"report_path,omitempty"`
+	ReportFormat string `yaml:"report_format,omitempty" json:"report_format,omitempty"`
+
 	ActiveProfile string `yaml:"-" json:"-"`
 
 	Bandwidth  Bandwidth        `yaml:"bandwidth" json:"bandwidth"`

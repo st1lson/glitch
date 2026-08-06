@@ -10,10 +10,11 @@ import (
 	"github.com/st1lson/glitch/internal/constants"
 	"github.com/st1lson/glitch/internal/control"
 	"github.com/st1lson/glitch/internal/logging"
+	"github.com/st1lson/glitch/internal/reporting"
 )
 
 // NewRouter builds a chi.Router wired with all middleware and API routes.
-func NewRouter(state *config.Manager, gate *control.Gatekeeper, apiHandler http.Handler, reporter logging.EventReporter) chi.Router {
+func NewRouter(state *config.Manager, gate *control.Gatekeeper, apiHandler http.Handler, reporter logging.EventReporter, reports *reporting.ReportManager) chi.Router {
 	r := chi.NewRouter()
 
 	// Recovery middleware — catch panics and respond with 500.
@@ -23,7 +24,7 @@ func NewRouter(state *config.Manager, gate *control.Gatekeeper, apiHandler http.
 	r.Use(corsMiddleware)
 
 	// Control API — bypasses chaos and pause gate.
-	r.Mount(constants.ControlRoutePrefix, control.NewHandler(state, gate))
+	r.Mount(constants.ControlRoutePrefix, control.NewHandler(state, gate, reports))
 
 	// For the rest of the routes, apply logging, pause gate, and chaos.
 	r.Group(func(r chi.Router) {

@@ -11,6 +11,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/st1lson/glitch/internal/chaos"
 	"github.com/st1lson/glitch/internal/config"
+	"github.com/st1lson/glitch/internal/constants"
 )
 
 // LogEvent contains all information about a processed HTTP request.
@@ -23,7 +24,20 @@ type LogEvent struct {
 	ChaosLatency   time.Duration
 	ChaosFailure   int
 	ChaosCorrupted bool
+	BytesWritten   int
+	Scenario       string
 	Formatted      string
+}
+
+// MultiReporter broadcasts events to multiple reporters.
+type MultiReporter []EventReporter
+
+func (m MultiReporter) Report(event LogEvent) {
+	for _, r := range m {
+		if r != nil {
+			r.Report(event)
+		}
+	}
 }
 
 // EventReporter is an interface for receiving log events asynchronously.
@@ -40,11 +54,10 @@ func RequestLogger(state *config.Manager, reporter EventReporter) func(http.Hand
 			start := time.Now()
 			verbose := state.Get().Verbose
 
-			// In verbose mode, capture the request body so we can log it.
 			var bodyBytes []byte
 			if verbose {
 				if r.Body != nil {
-					bodyBytes, _ = io.ReadAll(r.Body)
+					bodyBytes, _ = io.ReadAll(io.LimitReader(r.Body, 1024*1024))
 					r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 				}
 			}
@@ -64,11 +77,13 @@ func RequestLogger(state *config.Manager, reporter EventReporter) func(http.Hand
 			line := fmt.Sprintf("%s  %s  %s  %s", method, path, status, formatDuration(duration))
 
 			event := LogEvent{
-				Timestamp:  start,
-				Method:     r.Method,
-				Path:       r.URL.RequestURI(),
-				StatusCode: rw.statusCode,
-				Duration:   duration,
+				Timestamp:    start,
+				Method:       r.Method,
+				Path:         r.URL.RequestURI(),
+				StatusCode:   rw.statusCode,
+				Duration:     duration,
+				BytesWritten: rw.bytesWritten,
+				Scenario:     r.Header.Get(constants.HeaderScenario),
 			}
 
 			// Append chaos annotations if present.

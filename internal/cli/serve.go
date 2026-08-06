@@ -17,6 +17,7 @@ import (
 	"github.com/st1lson/glitch/internal/control"
 	"github.com/st1lson/glitch/internal/engine"
 	"github.com/st1lson/glitch/internal/logging"
+	"github.com/st1lson/glitch/internal/reporting"
 	"github.com/st1lson/glitch/internal/server"
 	"github.com/st1lson/glitch/internal/tui"
 )
@@ -44,8 +45,11 @@ func runServe(cmd *cobra.Command, args []string) error {
 		go monkey.Run(workerCtx, state)
 	}
 
-	var reporter logging.EventReporter
 	var p *tea.Program
+	var reporters logging.MultiReporter
+
+	reports := reporting.NewReportManager(state)
+	reporters = append(reporters, reports)
 
 	if !cfg.NoTUI {
 		// Disable verbose logging to stdout when TUI is running
@@ -54,13 +58,13 @@ func runServe(cmd *cobra.Command, args []string) error {
 		})
 		app := tui.NewModel(state)
 		p = tea.NewProgram(app, tea.WithAltScreen()) // WithAltScreen is nice for dashboards
-		reporter = &tuiReporter{p: p}
+		reporters = append(reporters, &tuiReporter{p: p})
 	} else {
 		// Print standard startup banner when not using TUI
 		printBanner(cfg, eng.Name(), eng.Resources())
 	}
 
-	router := server.NewRouter(state, gate, eng.Handler(), reporter)
+	router := server.NewRouter(state, gate, eng.Handler(), reporters, reports)
 
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	isLoopbackBind := cfg.Host == constants.LocalhostName || cfg.Host == constants.LocalhostIPv4 || cfg.Host == constants.LocalhostIPv6
@@ -100,6 +104,11 @@ func runServe(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	_ = srv.Shutdown(ctx)
+
+	// Dump report on shutdown
+	if cfg.ReportPath != "" {
+		_ = reports.WriteReportFile(cfg.ReportPath, cfg.ReportFormat)
+	}
 
 	return nil
 }
