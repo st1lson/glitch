@@ -3,7 +3,7 @@ package realtime
 import (
 	"bytes"
 	"context"
-	"math/rand"
+	"github.com/st1lson/glitch/internal/chaos/rng"
 	"net/http"
 	"sync"
 
@@ -59,11 +59,11 @@ func (s *SSEInterceptor) Write(p []byte) (int, error) {
 }
 
 func (s *SSEInterceptor) processEvent(event []byte) {
-	if s.config.DropRate > 0 && rand.Float64()*100 < s.config.DropRate {
+	if s.config.DropRate > 0 && rng.FromContext(s.ctx).Float64()*100 < s.config.DropRate {
 		return // Drop event entirely
 	}
 
-	if s.config.DisconnectRate > 0 && rand.Float64()*100 < s.config.DisconnectRate {
+	if s.config.DisconnectRate > 0 && rng.FromContext(s.ctx).Float64()*100 < s.config.DisconnectRate {
 		panic(http.ErrAbortHandler) // Forcefully drop connection
 	}
 
@@ -73,12 +73,12 @@ func (s *SSEInterceptor) processEvent(event []byte) {
 		s.msgQueue = append(s.msgQueue, event)
 
 		// If we haven't hit the buffer limit, randomly decide to wait
-		if len(s.msgQueue) < maxBuf && rand.Float64() < 0.5 {
+		if len(s.msgQueue) < maxBuf && rng.FromContext(s.ctx).Float64() < 0.5 {
 			return
 		}
 
 		// Pop a random event
-		popIdx := rand.Intn(len(s.msgQueue))
+		popIdx := rng.FromContext(s.ctx).IntN(len(s.msgQueue))
 		eventToDeliver := s.msgQueue[popIdx]
 
 		// Remove from queue
@@ -112,7 +112,7 @@ func (s *SSEInterceptor) Flush() {
 
 	// Flush any remaining buffered out-of-order messages
 	for len(s.msgQueue) > 0 {
-		popIdx := rand.Intn(len(s.msgQueue))
+		popIdx := rng.FromContext(s.ctx).IntN(len(s.msgQueue))
 		event := s.msgQueue[popIdx]
 		s.msgQueue = append(s.msgQueue[:popIdx], s.msgQueue[popIdx+1:]...)
 		s.deliverEvent(event)

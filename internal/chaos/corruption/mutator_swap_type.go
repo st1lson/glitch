@@ -1,7 +1,9 @@
 package corruption
 
 import (
-	"math/rand/v2"
+	"context"
+
+	"github.com/st1lson/glitch/internal/chaos/rng"
 )
 
 // TypeSwapper changes a value's type.
@@ -9,7 +11,7 @@ type TypeSwapper struct{}
 
 func (m *TypeSwapper) Name() string { return "swap_type" }
 
-func (m *TypeSwapper) Mutate(data any) any {
+func (m *TypeSwapper) Mutate(ctx context.Context, data any) any {
 	// If given a map or slice, pick a random element and swap it
 	switch v := data.(type) {
 	case map[string]any:
@@ -20,14 +22,14 @@ func (m *TypeSwapper) Mutate(data any) any {
 		for k := range v {
 			keys = append(keys, k)
 		}
-		k := keys[rand.IntN(len(keys))]
+		k := keys[rng.FromContext(ctx).IntN(len(keys))]
 		v[k] = swapPrimitive(v[k])
 		return v
 	case []any:
 		if len(v) == 0 {
 			return v
 		}
-		idx := rand.IntN(len(v))
+		idx := rng.FromContext(ctx).IntN(len(v))
 		v[idx] = swapPrimitive(v[idx])
 		return v
 	default:

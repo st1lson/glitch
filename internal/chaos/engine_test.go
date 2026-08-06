@@ -147,3 +147,37 @@ func TestEngine_Middleware_Routes(t *testing.T) {
 		t.Errorf("expected specific route /fail to return 500, got %d", rr2.Code)
 	}
 }
+
+func TestEngine_Middleware_Seed(t *testing.T) {
+	seed := int64(12345)
+	cfg := config.Config{
+		Seed: &seed,
+		Failure: config.FailureConfig{
+			Rate: 50,
+		},
+	}
+
+	// Create two distinct engines with the same config (same seed)
+	engine1 := NewEngine(config.NewManager(cfg))
+	engine2 := NewEngine(config.NewManager(cfg))
+
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	mw1 := engine1.Middleware(next)
+	mw2 := engine2.Middleware(next)
+
+	for i := 0; i < 20; i++ {
+		req1 := httptest.NewRequest("GET", "/", nil)
+		rr1 := httptest.NewRecorder()
+		mw1.ServeHTTP(rr1, req1)
+
+		req2 := httptest.NewRequest("GET", "/", nil)
+		rr2 := httptest.NewRecorder()
+		mw2.ServeHTTP(rr2, req2)
+
+		if rr1.Code != rr2.Code {
+			t.Fatalf("divergence at request %d: engine1 code %d, engine2 code %d", i, rr1.Code, rr2.Code)
+		}
+	}
+}

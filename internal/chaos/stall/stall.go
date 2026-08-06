@@ -1,19 +1,20 @@
 package stall
 
 import (
-	"math/rand/v2"
+	"context"
 	"net/http"
 	"strconv"
 
+	"github.com/st1lson/glitch/internal/chaos/rng"
 	"github.com/st1lson/glitch/internal/config"
 )
 
 // ShouldTrigger determines if the request should be stalled based on the configured rate.
-func ShouldTrigger(cfg config.StallConfig) bool {
+func ShouldTrigger(ctx context.Context, cfg config.StallConfig) bool {
 	if cfg.Rate <= 0 {
 		return false
 	}
-	return rand.Float64() < (cfg.Rate / 100.0)
+	return rng.FromContext(ctx).Float64() < (cfg.Rate / 100.0)
 }
 
 // Writer wraps an http.ResponseWriter to simulate a stall (hang or drop)

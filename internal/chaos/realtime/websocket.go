@@ -3,7 +3,7 @@ package realtime
 import (
 	"bufio"
 	"context"
-	"math/rand"
+	"github.com/st1lson/glitch/internal/chaos/rng"
 	"net"
 	"net/http"
 
@@ -64,7 +64,7 @@ type WSConnInterceptor struct {
 }
 
 func (w *WSConnInterceptor) Read(b []byte) (n int, err error) {
-	if w.config.DisconnectRate > 0 && rand.Float64()*100 < w.config.DisconnectRate {
+	if w.config.DisconnectRate > 0 && rng.FromContext(w.ctx).Float64()*100 < w.config.DisconnectRate {
 		w.Conn.Close()
 		return 0, net.ErrClosed
 	}
@@ -77,7 +77,7 @@ func (w *WSConnInterceptor) Read(b []byte) (n int, err error) {
 }
 
 func (w *WSConnInterceptor) Write(b []byte) (n int, err error) {
-	if w.config.DisconnectRate > 0 && rand.Float64()*100 < w.config.DisconnectRate {
+	if w.config.DisconnectRate > 0 && rng.FromContext(w.ctx).Float64()*100 < w.config.DisconnectRate {
 		w.Conn.Close()
 		return 0, net.ErrClosed
 	}

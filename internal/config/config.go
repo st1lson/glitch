@@ -158,6 +158,8 @@ type Config struct {
 	ControlToken       string `yaml:"control_token" json:"control_token"`
 	InsecureControlAPI bool   `yaml:"insecure_control_api" json:"insecure_control_api"`
 
+	Seed     *int64 `yaml:"seed,omitempty" json:"seed,omitempty"`
+
 	ActiveProfile string `yaml:"-" json:"-"`
 
 	Bandwidth  Bandwidth        `yaml:"bandwidth" json:"bandwidth"`

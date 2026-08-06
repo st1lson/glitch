@@ -1,8 +1,10 @@
 package corruption
 
 import (
-	"math/rand/v2"
+	"context"
 	"strings"
+
+	"github.com/st1lson/glitch/internal/chaos/rng"
 )
 
 // SyntaxBreaker corrupts the raw JSON string.
@@ -10,7 +12,7 @@ type SyntaxBreaker struct{}
 
 func (m *SyntaxBreaker) Name() string { return "break_syntax" }
 
-func (m *SyntaxBreaker) Mutate(data any) any {
+func (m *SyntaxBreaker) Mutate(ctx context.Context, data any) any {
 	b, ok := data.([]byte)
 	if !ok {
 		return data
@@ -19,7 +21,7 @@ func (m *SyntaxBreaker) Mutate(data any) any {
 		return b
 	}
 
-	choice := rand.IntN(3)
+	choice := rng.FromContext(ctx).IntN(3)
 	switch choice {
 	case 0:
 		// Truncate

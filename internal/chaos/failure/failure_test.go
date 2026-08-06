@@ -1,6 +1,7 @@
 package failure
 
 import (
+	"context"
 	"testing"
 
 	"github.com/st1lson/glitch/internal/config"
@@ -65,7 +66,7 @@ func TestShouldTrigger(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotTrigger, gotCode := ShouldTrigger(tt.cfg)
+			gotTrigger, gotCode := ShouldTrigger(context.Background(), tt.cfg)
 			if gotTrigger != tt.wantTrigger {
 				t.Errorf("ShouldTrigger() gotTrigger = %v, want %v", gotTrigger, tt.wantTrigger)
 			}

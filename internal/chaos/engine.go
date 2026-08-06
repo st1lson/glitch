@@ -2,10 +2,13 @@ package chaos
 
 import (
 	"context"
+	"math/rand/v2"
 	"net/http"
 	"slices"
+	"sync"
 	"time"
 
+	"github.com/st1lson/glitch/internal/chaos/rng"
 	"github.com/st1lson/glitch/internal/config"
 	"github.com/st1lson/glitch/internal/constants"
 )
@@ -29,13 +32,19 @@ func GetChaosInfo(r *http.Request) *ChaosInfo {
 	return nil
 }
 
-
+type scenarioRNG struct {
+	seed int64
+	r    *rand.Rand
+}
 
 // Engine is the central chaos-engineering component that orchestrates
 // latency injection and failure injection.
 type Engine struct {
 	state *config.Manager
 	chain []func(http.Handler) http.Handler
+
+	rngMu sync.RWMutex
+	rngs  map[string]*scenarioRNG
 }
 
 // NewEngine constructs a chaos Engine from the application config state.
@@ -50,7 +59,30 @@ func NewEngine(state *config.Manager) *Engine {
 			CorruptionMiddleware(),
 			RealtimeMiddleware(),
 		},
+		rngs: make(map[string]*scenarioRNG),
 	}
+}
+
+func (e *Engine) getRNG(scenario string, seed int64) *rand.Rand {
+	e.rngMu.RLock()
+	entry, ok := e.rngs[scenario]
+	e.rngMu.RUnlock()
+
+	if ok && entry.seed == seed {
+		return entry.r
+	}
+
+	e.rngMu.Lock()
+	defer e.rngMu.Unlock()
+
+	// Double check after acquiring write lock
+	if entry, ok := e.rngs[scenario]; ok && entry.seed == seed {
+		return entry.r
+	}
+
+	r := rng.New(seed)
+	e.rngs[scenario] = &scenarioRNG{seed: seed, r: r}
+	return r
 }
 
 // Middleware returns an http.Handler middleware that applies chaos injection.
@@ -81,6 +113,17 @@ func (e *Engine) Middleware(next http.Handler) http.Handler {
 
 		// Inject effective chaos into context
 		ctx := setEffectiveChaos(r.Context(), eff)
+
+		// Setup RNG for this request
+		if cfg.Seed != nil {
+			// Map unknown scenarios to default cache key to prevent unbounded map growth (DoS)
+			cacheKey := scenario
+			if scenario != "" && !e.state.Has(scenario) {
+				cacheKey = ""
+			}
+			scenarioRNG := e.getRNG(cacheKey, *cfg.Seed)
+			ctx = rng.WithRNG(ctx, scenarioRNG)
+		}
 
 		// Setup chaos info for this request
 		info := &ChaosInfo{}

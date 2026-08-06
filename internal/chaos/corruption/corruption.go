@@ -2,21 +2,22 @@ package corruption
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"math/rand/v2"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/st1lson/glitch/internal/chaos/rng"
 	"github.com/st1lson/glitch/internal/config"
 )
 
 // ShouldTrigger determines whether to inject a payload corruption for the current request.
-func ShouldTrigger(cfg config.CorruptionConfig) bool {
+func ShouldTrigger(ctx context.Context, cfg config.CorruptionConfig) bool {
 	if cfg.Rate <= 0 {
 		return false
 	}
-	return rand.Float64() < (cfg.Rate / 100.0)
+	return rng.FromContext(ctx).Float64() < (cfg.Rate / 100.0)
 }
 
 // Writer wraps an http.ResponseWriter to buffer and mutate the response body.
@@ -26,13 +27,15 @@ type Writer struct {
 	cfg         config.CorruptionConfig
 	statusCode  int
 	wroteHeader bool
+	ctx         context.Context
 }
 
 // NewWriter creates a new Writer.
-func NewWriter(w http.ResponseWriter, cfg config.CorruptionConfig) *Writer {
+func NewWriter(w http.ResponseWriter, cfg config.CorruptionConfig, ctx context.Context) *Writer {
 	return &Writer{
 		ResponseWriter: w,
 		cfg:            cfg,
+		ctx:            ctx,
 	}
 }
 
@@ -63,7 +66,7 @@ func (c *Writer) Flush() {
 
 	// Only corrupt JSON responses.
 	if strings.Contains(contentType, "application/json") && len(body) > 0 {
-		corruptedBody, _ := CorruptPayload(body, c.cfg)
+		corruptedBody, _ := CorruptPayload(c.ctx, body, c.cfg)
 		body = corruptedBody
 	}
 
@@ -76,11 +79,11 @@ func (c *Writer) Flush() {
 // Mutator defines a strategy for mutating JSON data.
 type Mutator interface {
 	Name() string
-	Mutate(data any) any
+	Mutate(ctx context.Context, data any) any
 }
 
 // CorruptPayload applies random mutation strategies to the JSON payload.
-func CorruptPayload(body []byte, cfg config.CorruptionConfig) ([]byte, string) {
+func CorruptPayload(ctx context.Context, body []byte, cfg config.CorruptionConfig) ([]byte, string) {
 	mutators := getMutators(cfg.Strategies)
 	if len(mutators) == 0 {
 		return body, "" // No valid mutators
@@ -88,25 +91,25 @@ func CorruptPayload(body []byte, cfg config.CorruptionConfig) ([]byte, string) {
 
 	numMutators := 1
 	if cfg.Multi {
-		numMutators = rand.IntN(3) + 2 // 2 to 4 mutators if multi is enabled
+		numMutators = rng.FromContext(ctx).IntN(3) + 2 // 2 to 4 mutators if multi is enabled
 	}
 
 	mutatedNames := []string{}
 	currentBody := body
 
 	for i := 0; i < numMutators; i++ {
-		mutator := mutators[rand.IntN(len(mutators))]
+		mutator := mutators[rng.FromContext(ctx).IntN(len(mutators))]
 		mutatedNames = append(mutatedNames, mutator.Name())
 
 		if mutator.Name() == "break_syntax" {
-			currentBody = mutator.Mutate(currentBody).([]byte)
+			currentBody = mutator.Mutate(ctx, currentBody).([]byte)
 		} else {
 			var data any
 			if err := json.Unmarshal(currentBody, &data); err != nil {
 				// If we can't unmarshal (e.g. invalid JSON from a previous break_syntax), stop and return
 				break
 			}
-			data = walkAndMutate(data, mutator, rand.IntN(3)+1) // Walk 1 to 3 levels
+			data = walkAndMutate(ctx, data, mutator, rng.FromContext(ctx).IntN(3)+1) // Walk 1 to 3 levels
 			newBody, err := json.Marshal(data)
 			if err == nil {
 				currentBody = newBody
@@ -117,47 +120,47 @@ func CorruptPayload(body []byte, cfg config.CorruptionConfig) ([]byte, string) {
 	return currentBody, strings.Join(mutatedNames, ",")
 }
 
-func walkAndMutate(data any, mutator Mutator, depthLeft int) any {
+func walkAndMutate(ctx context.Context, data any, mutator Mutator, depthLeft int) any {
 	if depthLeft <= 0 {
-		return mutator.Mutate(data)
+		return mutator.Mutate(ctx, data)
 	}
 
 	switch v := data.(type) {
 	case map[string]any:
 		if len(v) == 0 {
-			return mutator.Mutate(data)
+			return mutator.Mutate(ctx, data)
 		}
 		// Pick a random key to recurse into or mutate directly if it's the target depth
 		keys := make([]string, 0, len(v))
 		for k := range v {
 			keys = append(keys, k)
 		}
-		key := keys[rand.IntN(len(keys))]
+		key := keys[rng.FromContext(ctx).IntN(len(keys))]
 
 		if depthLeft == 1 {
 			// At target depth, pass the whole map to let mutator pick what to do (e.g. drop a key)
 			// Wait, the mutator interface says `Mutate(data any) any`.
 			// It's cleaner if the mutator receives the container (map/slice) and mutates it.
-			return mutator.Mutate(data)
+			return mutator.Mutate(ctx, data)
 		} else {
-			v[key] = walkAndMutate(v[key], mutator, depthLeft-1)
+			v[key] = walkAndMutate(ctx, v[key], mutator, depthLeft-1)
 			return v
 		}
 
 	case []any:
 		if len(v) == 0 {
-			return mutator.Mutate(data)
+			return mutator.Mutate(ctx, data)
 		}
 		if depthLeft == 1 {
-			return mutator.Mutate(data)
+			return mutator.Mutate(ctx, data)
 		}
-		idx := rand.IntN(len(v))
-		v[idx] = walkAndMutate(v[idx], mutator, depthLeft-1)
+		idx := rng.FromContext(ctx).IntN(len(v))
+		v[idx] = walkAndMutate(ctx, v[idx], mutator, depthLeft-1)
 		return v
 
 	default:
 		// Primitive value, just mutate it directly
-		return mutator.Mutate(data)
+		return mutator.Mutate(ctx, data)
 	}
 }
 

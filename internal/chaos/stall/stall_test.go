@@ -1,6 +1,7 @@
 package stall
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -64,10 +65,10 @@ func TestStallWriter_DropWithoutContentLength(t *testing.T) {
 }
 
 func TestShouldTrigger(t *testing.T) {
-	if ShouldTrigger(config.StallConfig{Rate: 0}) {
+	if ShouldTrigger(context.Background(), config.StallConfig{Rate: 0}) {
 		t.Error("Expected false with rate 0")
 	}
-	if !ShouldTrigger(config.StallConfig{Rate: 100}) {
+	if !ShouldTrigger(context.Background(), config.StallConfig{Rate: 100}) {
 		t.Error("Expected true with rate 100")
 	}
 }

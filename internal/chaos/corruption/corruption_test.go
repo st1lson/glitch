@@ -2,6 +2,7 @@ package corruption
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -12,12 +13,12 @@ import (
 
 func TestShouldTrigger(t *testing.T) {
 	// Rate 0 should never corrupt
-	if ShouldTrigger(config.CorruptionConfig{Rate: 0}) {
+	if ShouldTrigger(context.Background(), config.CorruptionConfig{Rate: 0}) {
 		t.Error("Expected false with rate 0")
 	}
 
 	// Rate 100 should always corrupt
-	if !ShouldTrigger(config.CorruptionConfig{Rate: 100}) {
+	if !ShouldTrigger(context.Background(), config.CorruptionConfig{Rate: 100}) {
 		t.Error("Expected true with rate 100")
 	}
 }
@@ -27,14 +28,14 @@ func TestFieldDropper(t *testing.T) {
 
 	// Object
 	obj := map[string]any{"a": 1, "b": 2}
-	res := m.Mutate(obj).(map[string]any)
+	res := m.Mutate(context.Background(), obj).(map[string]any)
 	if len(res) != 1 {
 		t.Errorf("Expected 1 key, got %d", len(res))
 	}
 
 	// Array
 	arr := []any{1, 2, 3}
-	resArr := m.Mutate(arr).([]any)
+	resArr := m.Mutate(context.Background(), arr).([]any)
 	if len(resArr) != 2 {
 		t.Errorf("Expected length 2, got %d", len(resArr))
 	}
@@ -45,14 +46,14 @@ func TestTypeSwapper(t *testing.T) {
 
 	// Object
 	obj := map[string]any{"a": "string"}
-	res := m.Mutate(obj).(map[string]any)
+	res := m.Mutate(context.Background(), obj).(map[string]any)
 	if _, ok := res["a"].(int); !ok {
 		t.Error("Expected string to be swapped to int")
 	}
 
 	// Array
 	arr := []any{true}
-	resArr := m.Mutate(arr).([]any)
+	resArr := m.Mutate(context.Background(), arr).([]any)
 	if _, ok := resArr[0].(int); !ok {
 		t.Error("Expected bool to be swapped to int")
 	}
@@ -63,14 +64,14 @@ func TestNullInjector(t *testing.T) {
 
 	// Object
 	obj := map[string]any{"a": "string"}
-	res := m.Mutate(obj).(map[string]any)
+	res := m.Mutate(context.Background(), obj).(map[string]any)
 	if res["a"] != nil {
 		t.Error("Expected value to be null")
 	}
 
 	// Array
 	arr := []any{1}
-	resArr := m.Mutate(arr).([]any)
+	resArr := m.Mutate(context.Background(), arr).([]any)
 	if resArr[0] != nil {
 		t.Error("Expected value to be null")
 	}
@@ -80,7 +81,7 @@ func TestSyntaxBreaker(t *testing.T) {
 	m := &SyntaxBreaker{}
 
 	validJSON := []byte(`{"a": 1}`)
-	res := m.Mutate(validJSON).([]byte)
+	res := m.Mutate(context.Background(), validJSON).([]byte)
 
 	var dump any
 	if err := json.Unmarshal(res, &dump); err == nil {
@@ -94,7 +95,7 @@ func TestCorruptPayload(t *testing.T) {
 		Strategies: []config.CorruptionStrategy{config.StrategyDropField},
 	}
 
-	res, name := CorruptPayload(validJSON, cfg)
+	res, name := CorruptPayload(context.Background(), validJSON, cfg)
 	if bytes.Equal(validJSON, res) {
 		t.Error("Expected payload to be mutated")
 	}
@@ -107,7 +108,7 @@ func TestCorruptPayload(t *testing.T) {
 		Multi: true,
 		Strategies: []config.CorruptionStrategy{config.StrategyDropField, config.StrategySwapType, config.StrategyInjectNull, config.StrategyBreakSyntax},
 	}
-	resMulti, nameMulti := CorruptPayload(validJSON, cfgMulti)
+	resMulti, nameMulti := CorruptPayload(context.Background(), validJSON, cfgMulti)
 	if bytes.Equal(validJSON, resMulti) {
 		t.Error("Expected payload to be mutated in multi mode")
 	}
@@ -122,7 +123,7 @@ func TestCorruptionWriter_JSON(t *testing.T) {
 	}
 
 	rec := httptest.NewRecorder()
-	cw := NewWriter(rec, cfg)
+	cw := NewWriter(rec, cfg, context.Background())
 
 	cw.Header().Set("Content-Type", "application/json")
 	cw.WriteHeader(http.StatusOK)
@@ -151,7 +152,7 @@ func TestCorruptionWriter_NonJSON(t *testing.T) {
 	}
 
 	rec := httptest.NewRecorder()
-	cw := NewWriter(rec, cfg)
+	cw := NewWriter(rec, cfg, context.Background())
 
 	cw.Header().Set("Content-Type", "text/plain")
 	cw.WriteHeader(http.StatusOK)
@@ -170,7 +171,7 @@ func TestCorruptionWriter_NonJSON(t *testing.T) {
 
 func TestCorruptionWriter_WriteNoHeader(t *testing.T) {
 	rec := httptest.NewRecorder()
-	cw := NewWriter(rec, config.CorruptionConfig{Strategies: []config.CorruptionStrategy{config.StrategyInjectNull}})
+	cw := NewWriter(rec, config.CorruptionConfig{Strategies: []config.CorruptionStrategy{config.StrategyInjectNull}}, context.Background())
 	cw.Header().Set("Content-Type", "application/json")
 	cw.Write([]byte(`{"a":1}`))
 	cw.Flush()
@@ -178,27 +179,27 @@ func TestCorruptionWriter_WriteNoHeader(t *testing.T) {
 
 func TestWalkAndMutate_Primitive(t *testing.T) {
 	mDrop := &FieldDropper{}
-	if mDrop.Mutate("test") != "test" { t.Error("FieldDropper: expected unchanged") }
+	if mDrop.Mutate(context.Background(), "test") != "test" { t.Error("FieldDropper: expected unchanged") }
 
 	mSwap := &TypeSwapper{}
 	if mSwap.Name() != "swap_type" { t.Error("TypeSwapper: name mismatch") }
-	if mSwap.Mutate(nil) == nil { t.Error("TypeSwapper: expected changed for nil") }
+	if mSwap.Mutate(context.Background(), nil) == nil { t.Error("TypeSwapper: expected changed for nil") }
 	
 	mNull := &NullInjector{}
-	if mNull.Mutate(123) != nil { t.Error("NullInjector: expected nil") }
+	if mNull.Mutate(context.Background(), 123) != nil { t.Error("NullInjector: expected nil") }
 
 	mBreak := &SyntaxBreaker{}
-	if mBreak.Mutate("not bytes") != "not bytes" { t.Error("SyntaxBreaker: expected unchanged") }
+	if mBreak.Mutate(context.Background(), "not bytes") != "not bytes" { t.Error("SyntaxBreaker: expected unchanged") }
 	
 	validJSON := []byte(`"just a string"`)
-	mBreak.Mutate(validJSON)
+	mBreak.Mutate(context.Background(), validJSON)
 }
 
 func TestTypeSwapper_Primitives(t *testing.T) {
 	m := &TypeSwapper{}
-	m.Mutate(map[string]any{"a": 123.45})
-	m.Mutate(map[string]any{"a": nil})
-	m.Mutate([]any{123.45})
-	m.Mutate([]any{nil})
+	m.Mutate(context.Background(), map[string]any{"a": 123.45})
+	m.Mutate(context.Background(), map[string]any{"a": nil})
+	m.Mutate(context.Background(), []any{123.45})
+	m.Mutate(context.Background(), []any{nil})
 }
 

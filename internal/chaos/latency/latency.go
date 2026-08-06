@@ -2,16 +2,16 @@ package latency
 
 import (
 	"context"
-	"math/rand/v2"
 	"time"
 
+	"github.com/st1lson/glitch/internal/chaos/rng"
 	"github.com/st1lson/glitch/internal/config"
 )
 
 // InjectLatency computes the delay duration based on the configured mode, sleeps for
 // that duration (respecting context cancellation), and returns the actual time slept.
 func Inject(ctx context.Context, cfg config.LatencyConfig) time.Duration {
-	delay := computeDelay(cfg)
+	delay := computeDelay(ctx, cfg)
 	if delay <= 0 {
 		return 0
 	}
@@ -32,7 +32,7 @@ func Inject(ctx context.Context, cfg config.LatencyConfig) time.Duration {
 }
 
 // computeDelay returns the target delay duration based on the configured mode.
-func computeDelay(cfg config.LatencyConfig) time.Duration {
+func computeDelay(ctx context.Context, cfg config.LatencyConfig) time.Duration {
 	if cfg.Fixed.Duration > 0 {
 		return cfg.Fixed.Duration
 	}
@@ -50,7 +50,7 @@ func computeDelay(cfg config.LatencyConfig) time.Duration {
 		// Use a normal distribution centered between min and max
 		mean := (minF + maxF) / 2
 		stdDev := (maxF - minF) / 6 // 99.7% of values fall within 3 stdDevs
-		val := rand.NormFloat64()*stdDev + mean
+		val := rng.FromContext(ctx).NormFloat64()*stdDev + mean
 
 		// Clamp the result to [min, max]
 		if val < minF {
@@ -65,7 +65,7 @@ func computeDelay(cfg config.LatencyConfig) time.Duration {
 		if diff <= 0 {
 			return cfg.Min.Duration
 		}
-		delay = cfg.Min.Duration + time.Duration(rand.Int64N(int64(diff)))
+		delay = cfg.Min.Duration + time.Duration(rng.FromContext(ctx).Int64N(int64(diff)))
 	}
 
 	return delay

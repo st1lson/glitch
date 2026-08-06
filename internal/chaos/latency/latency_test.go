@@ -38,7 +38,7 @@ func TestComputeDelay(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := computeDelay(tt.cfg)
+			got := computeDelay(context.Background(), tt.cfg)
 			if got != tt.want {
 				t.Errorf("computeDelay() = %v, want %v", got, tt.want)
 			}
@@ -60,12 +60,12 @@ func TestComputeDelay_Ranges(t *testing.T) {
 	}
 
 	for range 100 {
-		gotUniform := computeDelay(cfgUniform)
+		gotUniform := computeDelay(context.Background(), cfgUniform)
 		if gotUniform < 10*time.Millisecond || gotUniform > 50*time.Millisecond {
 			t.Errorf("computeDelay() uniform = %v, want between 10ms and 50ms", gotUniform)
 		}
 
-		gotNormal := computeDelay(cfgNormal)
+		gotNormal := computeDelay(context.Background(), cfgNormal)
 		if gotNormal < 10*time.Millisecond || gotNormal > 50*time.Millisecond {
 			t.Errorf("computeDelay() normal = %v, want between 10ms and 50ms", gotNormal)
 		}

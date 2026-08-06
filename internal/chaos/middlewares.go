@@ -47,7 +47,7 @@ func FailureMiddleware() func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			eff, ok := getEffectiveChaos(r.Context())
 			if ok && eff.Failure.Enabled() {
-				if fail, code := failure.ShouldTrigger(eff.Failure); fail {
+				if fail, code := failure.ShouldTrigger(r.Context(), eff.Failure); fail {
 					if info := GetChaosInfo(r); info != nil {
 						info.FailureCode = code
 					}
@@ -65,7 +65,7 @@ func StallMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			eff, ok := getEffectiveChaos(r.Context())
-			if ok && eff.Stall.Enabled() && stall.ShouldTrigger(eff.Stall) {
+			if ok && eff.Stall.Enabled() && stall.ShouldTrigger(r.Context(), eff.Stall) {
 				w = stall.NewWriter(w, eff.Stall.Mode, eff.Stall.DropAt)
 			}
 			next.ServeHTTP(w, r)
@@ -78,8 +78,8 @@ func CorruptionMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			eff, ok := getEffectiveChaos(r.Context())
-			if ok && eff.Corruption.Enabled() && corruption.ShouldTrigger(eff.Corruption) {
-				cw := corruption.NewWriter(w, eff.Corruption)
+			if ok && eff.Corruption.Enabled() && corruption.ShouldTrigger(r.Context(), eff.Corruption) {
+				cw := corruption.NewWriter(w, eff.Corruption, r.Context())
 				if info := GetChaosInfo(r); info != nil {
 					info.Corrupted = true
 				}

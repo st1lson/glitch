@@ -46,6 +46,14 @@ func (m *Manager) Get() Config {
 	return m.Resolve("")
 }
 
+// Has returns true if the specified scenario explicitly exists in the configuration.
+func (m *Manager) Has(scenario string) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	_, ok := m.scenarios[scenario]
+	return ok
+}
+
 // Overlay applies chaos settings on top of a scenario's current configuration.
 // If the scenario doesn't exist, it is initialized from the baseline first.
 func (m *Manager) Overlay(scenario string, override *Config) {
