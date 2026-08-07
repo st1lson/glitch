@@ -106,7 +106,8 @@ func CorruptPayload(ctx context.Context, body []byte, cfg config.CorruptionConfi
 			var data any
 			if err := json.Unmarshal(currentBody, &data); err != nil {
 				// If we can't unmarshal (e.g. invalid JSON from a previous break_syntax), stop and return
-				return body, ""
+				mutatedNames = mutatedNames[:len(mutatedNames)-1]
+				break
 			}
 			data = walkAndMutate(ctx, data, mutator, rng.FromContext(ctx).IntN(3)+1)
 			newBody, err := json.Marshal(data)
