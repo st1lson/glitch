@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/st1lson/glitch/internal/chaos"
 	"github.com/st1lson/glitch/internal/config"
 	"github.com/st1lson/glitch/internal/constants"
+	"github.com/st1lson/glitch/internal/theme"
 )
 
 // LogEvent contains all information about a processed HTTP request.
@@ -147,15 +147,15 @@ func colorMethod(method string) string {
 	padded := fmt.Sprintf("%-7s", method)
 	switch method {
 	case http.MethodGet:
-		return color.GreenString(padded)
+		return theme.Success.Render(padded)
 	case http.MethodPost:
-		return color.CyanString(padded)
+		return theme.Primary.Render(padded)
 	case http.MethodPut:
-		return color.YellowString(padded)
+		return theme.Warning.Render(padded)
 	case http.MethodPatch:
-		return color.YellowString(padded)
+		return theme.Warning.Render(padded)
 	case http.MethodDelete:
-		return color.RedString(padded)
+		return theme.Error.Render(padded)
 	default:
 		return padded
 	}
@@ -166,11 +166,11 @@ func colorStatus(code int) string {
 	s := fmt.Sprintf("%d", code)
 	switch {
 	case code >= 200 && code < 300:
-		return color.GreenString(s)
+		return theme.Success.Render(s)
 	case code >= 400 && code < 500:
-		return color.YellowString(s)
+		return theme.Warning.Render(s)
 	case code >= 500:
-		return color.RedString(s)
+		return theme.Error.Render(s)
 	default:
 		return s
 	}
@@ -209,17 +209,17 @@ func buildChaosAnnotations(info *chaos.ChaosInfo) string {
 
 // printVerbose prints request headers and body for verbose logging.
 func printVerbose(r *http.Request, body []byte) {
-	gray := color.New(color.FgHiBlack)
+	grayStyle := theme.Muted
 
-	gray.Println("  Headers:")
+	fmt.Println(grayStyle.Render("  Headers:"))
 	for name, values := range r.Header {
 		for _, v := range values {
-			gray.Printf("    %s: %s\n", name, v)
+			fmt.Println(grayStyle.Render(fmt.Sprintf("    %s: %s", name, v)))
 		}
 	}
 
 	if len(body) > 0 {
-		gray.Println("  Body:")
-		gray.Printf("    %s\n", string(body))
+		fmt.Println(grayStyle.Render("  Body:"))
+		fmt.Println(grayStyle.Render(fmt.Sprintf("    %s", string(body))))
 	}
 }

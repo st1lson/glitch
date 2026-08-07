@@ -7,44 +7,35 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/st1lson/glitch/internal/config"
 	"github.com/st1lson/glitch/internal/logging"
+	"github.com/st1lson/glitch/internal/theme"
 )
 
 var (
-	titleStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(lipgloss.Color("6")).
-			MarginBottom(1)
+	titleStyle = theme.Primary.Bold(true).MarginBottom(1)
 
-	labelStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("8"))
+	labelStyle = theme.Muted
 
-	valueStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("2")).
-			Bold(true)
+	valueStyle = theme.Success.Bold(true)
 
-	metricsTitleStyle = lipgloss.NewStyle().
-				Bold(true).
-				Foreground(lipgloss.Color("5"))
+	metricsTitleStyle = theme.Highlight.Bold(true)
 
 	outerStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("8"))
+			BorderForeground(theme.ColorMuted)
 
 	metricsBoxStyle = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder(), false, false, true, false).
-			BorderForeground(lipgloss.Color("8")).
+			BorderForeground(theme.ColorMuted).
 			Padding(0, 1)
 	logBoxStyle = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder(), false, false, false, true).
-			BorderForeground(lipgloss.Color("8")).
+			BorderForeground(theme.ColorMuted).
 			Padding(0, 1)
 
 	profileBoxStyle = lipgloss.NewStyle().
 			Padding(0, 1)
 
-	helpStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("8")).
-			MarginTop(1)
+	helpStyle = theme.Muted.MarginTop(1)
 )
 
 const maxLogs = 100

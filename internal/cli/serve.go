@@ -9,7 +9,6 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/st1lson/glitch/internal/chaos/monkey"
 	"github.com/st1lson/glitch/internal/config"
@@ -19,6 +18,7 @@ import (
 	"github.com/st1lson/glitch/internal/logging"
 	"github.com/st1lson/glitch/internal/reporting"
 	"github.com/st1lson/glitch/internal/server"
+	"github.com/st1lson/glitch/internal/theme"
 	"github.com/st1lson/glitch/internal/tui"
 )
 
@@ -123,42 +123,40 @@ func (r *tuiReporter) Report(event logging.LogEvent) {
 
 // printBanner prints the colorful startup banner.
 func printBanner(cfg config.Config, modeName string, resources []string) {
-	bold := color.New(color.FgCyan, color.Bold)
-	green := color.New(color.FgGreen)
-	yellow := color.New(color.FgYellow)
-	white := color.New(color.FgWhite)
+	bold := theme.Primary.Bold(true)
+	green := theme.Success
+	yellow := theme.Warning
+	white := theme.Text
 
 	fmt.Println()
-	bold.Printf("  ⚡ Glitch v%s\n", Version)
-	white.Print("  ➜ Mode: ")
-	green.Printf("%s\n", modeName)
-	white.Print("  ➜ Server running at ")
-	green.Printf("http://%s:%d\n", cfg.Host, cfg.Port)
+	fmt.Println(bold.Render(fmt.Sprintf("  ⚡ Glitch v%s", Version)))
+	fmt.Printf("%s%s\n", white.Render("  ➜ Mode: "), green.Render(modeName))
+	fmt.Printf("%s%s\n", white.Render("  ➜ Server running at "), green.Render(fmt.Sprintf("http://%s:%d", cfg.Host, cfg.Port)))
 	fmt.Println()
 
 	if len(resources) > 0 {
-		white.Println("  Resources:")
+		fmt.Println(white.Render("  Resources:"))
 		for _, c := range resources {
-			green.Printf("    %s\n", c)
+			fmt.Println(green.Render(fmt.Sprintf("    %s", c)))
 		}
 		fmt.Println()
 	}
 
 	if cfg.HasChaos() {
-		white.Println("  Chaos:")
+		fmt.Println(white.Render("  Chaos:"))
 
 		if cfg.Latency.Enabled() {
-			yellow.Printf("    Latency: %s\n", formatLatency(cfg.Latency))
+			fmt.Println(yellow.Render(fmt.Sprintf("    Latency: %s", formatLatency(cfg.Latency))))
 		}
 
 		if cfg.Failure.Enabled() {
-			yellow.Printf("    Fail rate: %.0f%%\n", cfg.Failure.Rate)
+			fmt.Println(yellow.Render(fmt.Sprintf("    Fail rate: %.0f%%", cfg.Failure.Rate)))
 			if len(cfg.Failure.Statuses) > 0 {
 				parts := make([]string, 0, len(cfg.Failure.Statuses))
 				for _, s := range cfg.Failure.Statuses {
 					parts = append(parts, fmt.Sprintf("%d:%.0f%%", s.Code, s.Rate))
 				}
-				yellow.Printf("    Statuses: %s\n", strings.Join(parts, ", "))
+				fmt.Println(yellow.Render(fmt.Sprintf("    Statuses: %s", strings.Join(parts, ", "))))
 			}
 		}
 
