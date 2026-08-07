@@ -37,7 +37,6 @@ func runServe(cmd *cobra.Command, args []string) error {
 	state := config.NewManager(cfg)
 	gate := control.NewGatekeeper()
 
-	// Create a context for background workers that terminates when the server exits
 	workerCtx, cancelWorker := context.WithCancel(context.Background())
 	defer cancelWorker()
 
@@ -52,15 +51,15 @@ func runServe(cmd *cobra.Command, args []string) error {
 	reporters = append(reporters, reports)
 
 	if !cfg.NoTUI {
-		// Disable verbose logging to stdout when TUI is running
+
 		state.Update(func(c *config.Config) {
 			c.Verbose = false
 		})
 		app := tui.NewModel(state)
-		p = tea.NewProgram(app, tea.WithAltScreen()) // WithAltScreen is nice for dashboards
+		p = tea.NewProgram(app, tea.WithAltScreen())
 		reporters = append(reporters, &tuiReporter{p: p})
 	} else {
-		// Print standard startup banner when not using TUI
+
 		printBanner(cfg, eng.Name(), eng.Resources())
 	}
 
@@ -85,7 +84,7 @@ func runServe(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("error running TUI: %w", err)
 		}
 	} else {
-		// If TUI is disabled, wait for OS signals manually to gracefully shutdown
+
 		ch := make(chan os.Signal, 1)
 		signal.Notify(ch, os.Interrupt)
 
@@ -95,17 +94,15 @@ func runServe(cmd *cobra.Command, args []string) error {
 				return err
 			}
 		case <-ch:
-			// Shutting down gracefully
+
 		}
 	}
 
-	// Gracefully shut down server
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	_ = srv.Shutdown(ctx)
 
-	// Dump report on shutdown
 	if cfg.ReportPath != "" {
 		_ = reports.WriteReportFile(cfg.ReportPath, cfg.ReportFormat)
 	}
@@ -139,7 +136,6 @@ func printBanner(cfg config.Config, modeName string, resources []string) {
 	green.Printf("http://%s:%d\n", cfg.Host, cfg.Port)
 	fmt.Println()
 
-	// Resources
 	if len(resources) > 0 {
 		white.Println("  Resources:")
 		for _, c := range resources {
@@ -148,7 +144,6 @@ func printBanner(cfg config.Config, modeName string, resources []string) {
 		fmt.Println()
 	}
 
-	// Chaos settings
 	if cfg.HasChaos() {
 		white.Println("  Chaos:")
 

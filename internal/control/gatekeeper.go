@@ -35,13 +35,13 @@ func (g *Gatekeeper) Pause(scenario string, timeout time.Duration) {
 
 	state, ok := g.states[scenario]
 	if !ok || state.gate == nil {
-		// Not paused, so pause it
+
 		state = &pauseState{
 			gate: make(chan struct{}),
 		}
 		g.states[scenario] = state
 	} else if state.timer != nil {
-		// Already paused, reset the timer if it exists
+
 		state.timer.Stop()
 		state.timer = nil
 	}
@@ -82,7 +82,7 @@ func (g *Gatekeeper) Wait(ctx context.Context, scenario string) error {
 	g.mu.Unlock()
 
 	if gate == nil {
-		return nil // Not paused
+		return nil
 	}
 
 	select {

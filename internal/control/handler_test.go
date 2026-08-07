@@ -18,7 +18,7 @@ func setupHandler(t *testing.T) (http.Handler, *config.Manager, *Gatekeeper) {
 	initialCfg := config.Config{
 		Host:               constants.LocalhostName,
 		Port:               8080,
-		InsecureControlAPI: true, // Bypass auth middleware for tests
+		InsecureControlAPI: true,
 	}
 	mgr := config.NewManager(initialCfg)
 	gate := NewGatekeeper()
@@ -60,7 +60,6 @@ func TestHandler_ConfigAndRules(t *testing.T) {
 	handler, mgr, _ := setupHandler(t)
 	scenario := "test-rules"
 
-	// 1. Post Rules
 	override := config.Config{
 		Failure: config.FailureConfig{
 			Rate: 100,
@@ -84,7 +83,6 @@ func TestHandler_ConfigAndRules(t *testing.T) {
 		t.Errorf("expected failure rate 100, got %v", cfg.Failure.Rate)
 	}
 
-	// 2. Get Config
 	req2 := httptest.NewRequest(http.MethodGet, "/config", nil)
 	req2.Header.Set(constants.HeaderScenario, scenario)
 	rr2 := httptest.NewRecorder()
@@ -102,7 +100,6 @@ func TestHandler_ConfigAndRules(t *testing.T) {
 		t.Errorf("expected failure rate 100, got %v", res.Failure.Rate)
 	}
 
-	// 3. Delete Rules
 	req3 := httptest.NewRequest(http.MethodDelete, "/rules", nil)
 	req3.Header.Set(constants.HeaderScenario, scenario)
 	rr3 := httptest.NewRecorder()
@@ -122,7 +119,6 @@ func TestHandler_PauseResume(t *testing.T) {
 	handler, _, gate := setupHandler(t)
 	scenario := "test-pause"
 
-	// Pause
 	req := httptest.NewRequest(http.MethodPost, "/pause?timeout=100ms", nil)
 	req.Header.Set(constants.HeaderScenario, scenario)
 	rr := httptest.NewRecorder()
@@ -136,7 +132,6 @@ func TestHandler_PauseResume(t *testing.T) {
 		t.Fatal("expected gatekeeper to be paused")
 	}
 
-	// Resume
 	req2 := httptest.NewRequest(http.MethodPost, "/resume", nil)
 	req2.Header.Set(constants.HeaderScenario, scenario)
 	rr2 := httptest.NewRecorder()
@@ -183,7 +178,6 @@ func TestHandler_Profiles(t *testing.T) {
 
 	handler, mgr, _ := setupHandler(t)
 
-	// Get Profiles
 	req := httptest.NewRequest(http.MethodGet, "/profiles", nil)
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
@@ -201,7 +195,6 @@ func TestHandler_Profiles(t *testing.T) {
 		t.Errorf("expected custom profile flaky, got %v", profiles.Custom)
 	}
 
-	// Post Profile (we'll use a builtin one like "bad-wifi")
 	req2 := httptest.NewRequest(http.MethodPost, "/profile/bad-wifi", nil)
 	req2.Header.Set(constants.HeaderScenario, "test-profile")
 	rr2 := httptest.NewRecorder()
@@ -216,7 +209,6 @@ func TestHandler_Profiles(t *testing.T) {
 		t.Errorf("expected profile to modify config")
 	}
 
-	// Post a discovered custom profile by name.
 	reqCustom := httptest.NewRequest(http.MethodPost, "/profile/flaky", nil)
 	reqCustom.Header.Set(constants.HeaderScenario, "custom-profile")
 	rrCustom := httptest.NewRecorder()
@@ -228,7 +220,6 @@ func TestHandler_Profiles(t *testing.T) {
 		t.Errorf("expected custom profile failure rate 25, got %v", cfg.Failure.Rate)
 	}
 
-	// Post Profile Invalid
 	req3 := httptest.NewRequest(http.MethodPost, "/profile/nonexistent", nil)
 	rr3 := httptest.NewRecorder()
 	handler.ServeHTTP(rr3, req3)
@@ -241,7 +232,6 @@ func TestHandler_Profiles(t *testing.T) {
 func TestHandler_ScenarioIsolation(t *testing.T) {
 	handler, mgr, _ := setupHandler(t)
 
-	// Scenario A creates a rule
 	overrideA := config.Config{
 		Failure: config.FailureConfig{
 			Rate: 100,
@@ -260,7 +250,6 @@ func TestHandler_ScenarioIsolation(t *testing.T) {
 		t.Fatalf("scenario-a expected 200, got %d", rrA.Code)
 	}
 
-	// Scenario B creates a different rule
 	overrideB := config.Config{
 		Failure: config.FailureConfig{
 			Rate: 50,
@@ -279,19 +268,16 @@ func TestHandler_ScenarioIsolation(t *testing.T) {
 		t.Fatalf("scenario-b expected 200, got %d", rrB.Code)
 	}
 
-	// Verify Scenario A configuration
 	cfgA := mgr.Resolve("scenario-a")
 	if cfgA.Failure.Rate != 100 || len(cfgA.Failure.Statuses) == 0 || cfgA.Failure.Statuses[0].Code != 400 {
 		t.Errorf("scenario-a isolation failed, got rate %v, status %v", cfgA.Failure.Rate, cfgA.Failure.Statuses)
 	}
 
-	// Verify Scenario B configuration
 	cfgB := mgr.Resolve("scenario-b")
 	if cfgB.Failure.Rate != 50 || len(cfgB.Failure.Statuses) == 0 || cfgB.Failure.Statuses[0].Code != 500 {
 		t.Errorf("scenario-b isolation failed, got rate %v, status %v", cfgB.Failure.Rate, cfgB.Failure.Statuses)
 	}
 
-	// Verify Baseline configuration is untouched
 	cfgBaseline := mgr.Baseline()
 	if cfgBaseline.Failure.Rate != 0 || len(cfgBaseline.Failure.Statuses) != 0 {
 		t.Errorf("baseline isolation failed, got rate %v, statuses %v", cfgBaseline.Failure.Rate, cfgBaseline.Failure.Statuses)

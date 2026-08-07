@@ -36,7 +36,7 @@ func NewHandler(cfg *config.Manager, gate *Gatekeeper, reports *reporting.Report
 	r.Get("/config", h.handleGetConfig)
 	r.Get("/config/baseline", h.handleGetBaseline)
 
-	r.Patch("/rules", h.handlePostRules) // PATCH is semantically more correct since it merges
+	r.Patch("/rules", h.handlePostRules)
 	r.Delete("/rules", h.handleDeleteRules)
 
 	r.Get("/profiles", h.handleGetProfiles)
@@ -72,7 +72,6 @@ func authMiddleware(cfg *config.Manager) func(http.Handler) http.Handler {
 				return
 			}
 
-			// No token configured: allow only loopback
 			if isLoopback(r.RemoteAddr) {
 				next.ServeHTTP(w, r)
 				return
@@ -84,7 +83,7 @@ func authMiddleware(cfg *config.Manager) func(http.Handler) http.Handler {
 }
 
 func isLoopback(remoteAddr string) bool {
-	// RemoteAddr is usually "IP:port"
+
 	host := remoteAddr
 	for i := len(remoteAddr) - 1; i >= 0; i-- {
 		if remoteAddr[i] == ':' {
@@ -92,8 +91,7 @@ func isLoopback(remoteAddr string) bool {
 			break
 		}
 	}
-	
-	// Handle IPv6 brackets like "[::1]:port"
+
 	if len(host) > 2 && host[0] == '[' && host[len(host)-1] == ']' {
 		host = host[1 : len(host)-1]
 	}

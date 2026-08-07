@@ -37,7 +37,6 @@ func setupTestRouter(t *testing.T) (chi.Router, *storage.JSONStore) {
 		t.Fatal(err)
 	}
 
-	// Setup router
 	r := chi.NewRouter()
 	RegisterRoutes(r, store)
 
@@ -133,7 +132,6 @@ func TestCreateHandler(t *testing.T) {
 		t.Errorf("expected Charlie, got %v", item["name"])
 	}
 
-	// Verify ID was auto-generated
 	if _, ok := item["id"]; !ok {
 		t.Error("expected ID to be auto-generated")
 	}
@@ -175,7 +173,6 @@ func TestDeleteHandler(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusNoContent)
 	}
 
-	// Verify it's gone
 	reqCheck := httptest.NewRequest("GET", "/users/2", nil)
 	rrCheck := httptest.NewRecorder()
 	r.ServeHTTP(rrCheck, reqCheck)

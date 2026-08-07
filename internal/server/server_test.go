@@ -12,7 +12,6 @@ func TestServer_StartAndShutdown(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	// Use port 0 to let the OS assign an available random port
 	srv := New("127.0.0.1:0", handler)
 
 	errCh := make(chan error, 1)
@@ -20,7 +19,6 @@ func TestServer_StartAndShutdown(t *testing.T) {
 		errCh <- srv.Start()
 	}()
 
-	// Wait briefly for server to start listening
 	time.Sleep(100 * time.Millisecond)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -32,7 +30,7 @@ func TestServer_StartAndShutdown(t *testing.T) {
 	}
 
 	err = <-errCh
-	// Start() returns nil on graceful shutdown
+
 	if err != nil {
 		t.Fatalf("Start() returned unexpected error: %v", err)
 	}

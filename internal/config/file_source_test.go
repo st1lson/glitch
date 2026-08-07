@@ -39,16 +39,13 @@ latency:
 }
 
 func TestFileSource_Load_NotFound(t *testing.T) {
-	// Explicit path should error if not found
+
 	src := NewFileSource("/path/that/does/not/exist.yaml")
 	_, err := src.Load()
 	if err == nil {
 		t.Error("expected error for explicit non-existent file")
 	}
 
-	// Implicit path (auto-discovery) should return nil, nil if not found
-	// Assuming the current working directory doesn't have a glitch.yaml
-	// (We can change working dir to temp dir to be safe)
 	originalWd, _ := os.Getwd()
 	defer os.Chdir(originalWd)
 

@@ -14,9 +14,9 @@ func TestWSConnInterceptor_ReadWrite(t *testing.T) {
 	defer server.Close()
 
 	cfg := config.RealtimeConfig{}
-	
+
 	interceptor := NewWSHijackInterceptor(context.Background(), nil, cfg)
-	// We just test the WSConnInterceptor directly since Hijacker is hard to mock without full HTTP server
+
 	conn := &WSConnInterceptor{
 		Conn:   server,
 		config: interceptor.config,
@@ -46,9 +46,9 @@ func TestWSConnInterceptor_Disconnect(t *testing.T) {
 	defer server.Close()
 
 	cfg := config.RealtimeConfig{
-		DisconnectRate: 100, // 100% disconnect
+		DisconnectRate: 100,
 	}
-	
+
 	conn := &WSConnInterceptor{
 		Conn:   server,
 		config: cfg,

@@ -22,7 +22,6 @@ func ApplyQuery(items []map[string]any, params url.Values) ([]map[string]any, in
 
 	result = applyPagination(result, params)
 
-	// Never return nil — always return an empty slice for clean JSON.
 	if result == nil {
 		result = []map[string]any{}
 	}
@@ -75,14 +74,13 @@ func matchesAllFilters(item map[string]any, filters map[string]string) bool {
 // valuesMatch compares an item field value against the query parameter string.
 // It tries numeric comparison first, then falls back to case-insensitive strings.
 func valuesMatch(fieldVal any, queryVal string) bool {
-	// Try numeric comparison.
+
 	if fieldNum, ok := toFloat64(fieldVal); ok {
 		if queryNum, err := strconv.ParseFloat(queryVal, 64); err == nil {
 			return fieldNum == queryNum
 		}
 	}
 
-	// Fall back to case-insensitive string comparison.
 	return strings.EqualFold(fmt.Sprintf("%v", fieldVal), queryVal)
 }
 
@@ -139,7 +137,7 @@ func applySort(items []map[string]any, params url.Values) []map[string]any {
 // compareValues compares two interface values for sorting.
 // Returns -1, 0, or 1 like a three-way comparison.
 func compareValues(a, b any) int {
-	// Handle nil values — push them to the end.
+
 	if a == nil && b == nil {
 		return 0
 	}
@@ -150,7 +148,6 @@ func compareValues(a, b any) int {
 		return -1
 	}
 
-	// Try numeric comparison.
 	aNum, aOk := toFloat64(a)
 	bNum, bOk := toFloat64(b)
 	if aOk && bOk {
@@ -164,7 +161,6 @@ func compareValues(a, b any) int {
 		}
 	}
 
-	// Fall back to string comparison.
 	aStr := strings.ToLower(fmt.Sprintf("%v", a))
 	bStr := strings.ToLower(fmt.Sprintf("%v", b))
 	switch {

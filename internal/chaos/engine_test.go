@@ -10,7 +10,7 @@ import (
 )
 
 func TestEngine_Middleware_NoChaos(t *testing.T) {
-	// Empty config means no chaos
+
 	cfg := config.Config{}
 	engine := NewEngine(config.NewManager(cfg))
 
@@ -36,7 +36,7 @@ func TestEngine_Middleware_NoChaos(t *testing.T) {
 }
 
 func TestEngine_Middleware_Failure(t *testing.T) {
-	// 100% failure rate
+
 	cfg := config.Config{
 		Failure: config.FailureConfig{
 			Rate: 100,
@@ -59,18 +59,17 @@ func TestEngine_Middleware_Failure(t *testing.T) {
 	if handlerCalled {
 		t.Error("expected next handler NOT to be called due to 100% failure rate")
 	}
-	if rr.Code != http.StatusInternalServerError { // default failure code
+	if rr.Code != http.StatusInternalServerError {
 		t.Errorf("expected default 500 status, got %d", rr.Code)
 	}
 
 	info := GetChaosInfo(req)
-	// info will be attached to the request passed to next, but since we short-circuit,
-	// we'd need to extract it from a logger or something. This is fine.
+
 	_ = info
 }
 
 func TestEngine_Middleware_Latency(t *testing.T) {
-	// Fixed latency of 50ms
+
 	cfg := config.Config{
 		Latency: config.LatencyConfig{
 			Fixed: config.Duration{Duration: 50 * time.Millisecond},
@@ -104,10 +103,8 @@ func TestEngine_Middleware_Latency(t *testing.T) {
 	}
 }
 
-
-
 func TestEngine_Middleware_Routes(t *testing.T) {
-	// Global failure is 0, but /fail fails 100% of the time.
+
 	cfg := config.Config{
 		Failure: config.FailureConfig{
 			Rate: 0,
@@ -129,7 +126,6 @@ func TestEngine_Middleware_Routes(t *testing.T) {
 
 	mw := engine.Middleware(next)
 
-	// 1. Test the global stable route
 	req1 := httptest.NewRequest("GET", "/stable", nil)
 	rr1 := httptest.NewRecorder()
 	mw.ServeHTTP(rr1, req1)
@@ -138,12 +134,11 @@ func TestEngine_Middleware_Routes(t *testing.T) {
 		t.Errorf("expected global route /stable to return 200 OK, got %d", rr1.Code)
 	}
 
-	// 2. Test the specific failing route
 	req2 := httptest.NewRequest("GET", "/fail", nil)
 	rr2 := httptest.NewRecorder()
 	mw.ServeHTTP(rr2, req2)
 
-	if rr2.Code != http.StatusInternalServerError { // default failure code
+	if rr2.Code != http.StatusInternalServerError {
 		t.Errorf("expected specific route /fail to return 500, got %d", rr2.Code)
 	}
 }
@@ -157,7 +152,6 @@ func TestEngine_Middleware_Seed(t *testing.T) {
 		},
 	}
 
-	// Create two distinct engines with the same config (same seed)
 	engine1 := NewEngine(config.NewManager(cfg))
 	engine2 := NewEngine(config.NewManager(cfg))
 

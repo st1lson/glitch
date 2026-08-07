@@ -26,7 +26,7 @@ func (s *FileSource) Load() (*Config, error) {
 	if path == "" {
 		discovered, found := DiscoverConfigFile()
 		if !found {
-			return nil, nil // No config file found, totally fine.
+			return nil, nil
 		}
 		path = discovered
 	}

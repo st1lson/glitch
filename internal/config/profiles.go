@@ -33,7 +33,7 @@ type Profile struct {
 // LoadProfile loads a chaos profile by name. It first checks the built-in
 // (embedded) profiles, then .glitch/profiles, then treats the name as a file path.
 func LoadProfile(name string) (*Profile, error) {
-	// Check if it's a built-in profile name.
+
 	for _, builtin := range builtinProfiles {
 		if name == builtin {
 			return loadEmbeddedProfile(name)
@@ -46,7 +46,6 @@ func LoadProfile(name string) (*Profile, error) {
 		}
 	}
 
-	// Fall back to loading from a file path.
 	data, err := os.ReadFile(name)
 	if err != nil {
 		return nil, fmt.Errorf("loading profile %q: %w", name, err)

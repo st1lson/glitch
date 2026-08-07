@@ -53,7 +53,6 @@ func evalChaos(cfg config.Config, r *http.Request) EffectiveChaos {
 	for i := range cfg.Routes {
 		route := &cfg.Routes[i]
 
-		// Method check
 		if route.Method != "" && !strings.EqualFold(route.Method, r.Method) {
 			continue
 		}
@@ -64,7 +63,7 @@ func evalChaos(cfg config.Config, r *http.Request) EffectiveChaos {
 		}
 
 		if route.Method != "" {
-			score += 100 // Method match increases specificity
+			score += 100
 		}
 
 		if score > bestScore {

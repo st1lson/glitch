@@ -64,7 +64,6 @@ func (c *Writer) Flush() {
 	contentType := c.Header().Get("Content-Type")
 	body := c.buf.Bytes()
 
-	// Only corrupt JSON responses.
 	if strings.Contains(contentType, "application/json") && len(body) > 0 {
 		corruptedBody, _ := CorruptPayload(c.ctx, body, c.cfg)
 		body = corruptedBody
@@ -86,12 +85,12 @@ type Mutator interface {
 func CorruptPayload(ctx context.Context, body []byte, cfg config.CorruptionConfig) ([]byte, string) {
 	mutators := getMutators(cfg.Strategies)
 	if len(mutators) == 0 {
-		return body, "" // No valid mutators
+		return body, ""
 	}
 
 	numMutators := 1
 	if cfg.Multi {
-		numMutators = rng.FromContext(ctx).IntN(3) + 2 // 2 to 4 mutators if multi is enabled
+		numMutators = rng.FromContext(ctx).IntN(3) + 2
 	}
 
 	mutatedNames := []string{}
@@ -107,9 +106,9 @@ func CorruptPayload(ctx context.Context, body []byte, cfg config.CorruptionConfi
 			var data any
 			if err := json.Unmarshal(currentBody, &data); err != nil {
 				// If we can't unmarshal (e.g. invalid JSON from a previous break_syntax), stop and return
-				break
+				return body, ""
 			}
-			data = walkAndMutate(ctx, data, mutator, rng.FromContext(ctx).IntN(3)+1) // Walk 1 to 3 levels
+			data = walkAndMutate(ctx, data, mutator, rng.FromContext(ctx).IntN(3)+1)
 			newBody, err := json.Marshal(data)
 			if err == nil {
 				currentBody = newBody
@@ -130,7 +129,7 @@ func walkAndMutate(ctx context.Context, data any, mutator Mutator, depthLeft int
 		if len(v) == 0 {
 			return mutator.Mutate(ctx, data)
 		}
-		// Pick a random key to recurse into or mutate directly if it's the target depth
+
 		keys := make([]string, 0, len(v))
 		for k := range v {
 			keys = append(keys, k)
@@ -138,9 +137,7 @@ func walkAndMutate(ctx context.Context, data any, mutator Mutator, depthLeft int
 		key := keys[rng.FromContext(ctx).IntN(len(keys))]
 
 		if depthLeft == 1 {
-			// At target depth, pass the whole map to let mutator pick what to do (e.g. drop a key)
-			// Wait, the mutator interface says `Mutate(data any) any`.
-			// It's cleaner if the mutator receives the container (map/slice) and mutates it.
+
 			return mutator.Mutate(ctx, data)
 		} else {
 			v[key] = walkAndMutate(ctx, v[key], mutator, depthLeft-1)
@@ -159,12 +156,10 @@ func walkAndMutate(ctx context.Context, data any, mutator Mutator, depthLeft int
 		return v
 
 	default:
-		// Primitive value, just mutate it directly
+
 		return mutator.Mutate(ctx, data)
 	}
 }
-
-// Built-in mutators
 
 func getMutators(strategies []config.CorruptionStrategy) []Mutator {
 	allMutators := map[config.CorruptionStrategy]Mutator{

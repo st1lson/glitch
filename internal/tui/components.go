@@ -11,7 +11,7 @@ import (
 // renderRow is a helper to consistently format key-value lines across the UI
 func renderRow(label string, value string, labelWidth int) string {
 	var sb strings.Builder
-	// Left-align the label to labelWidth
+
 	format := fmt.Sprintf("%%-%ds", labelWidth)
 	sb.WriteString(labelStyle.Render(fmt.Sprintf(format, label)))
 	sb.WriteString(valueStyle.Render(value))
@@ -30,7 +30,6 @@ func renderMetricsPane(layout Layout, metrics Metrics) (string, int) {
 	b.WriteString(renderRow("Failures (4xx+):", fmt.Sprintf("%d", metrics.Errors), 18))
 	b.WriteString(renderRow("Chaos Intercepts:", fmt.Sprintf("%d", metrics.ChaosIntercepts), 18))
 
-	// Set the total outer height of metrics box to 10
 	metricsHeight := 10
 	hMetFrame, vMetFrame := metricsBoxStyle.GetFrameSize()
 
@@ -90,7 +89,6 @@ func renderControlPanelPane(layout Layout, cfg config.Config, actualMetricsHeigh
 
 	b.WriteString(helpStyle.Render("q/ctrl+c to quit"))
 
-	// The total height of left column is contentHeight.
 	profHeight := max(layout.ContentHeight-actualMetricsHeight, 5)
 
 	hProfFrame, vProfFrame := profileBoxStyle.GetFrameSize()
@@ -109,7 +107,6 @@ func renderLogsPane(layout Layout, logs []string) string {
 	hLogFrame, vLogFrame := logBoxStyle.GetFrameSize()
 	targetRightHeight := layout.ContentHeight - vLogFrame
 
-	// How many logs can we fit?
 	visibleLogs := targetRightHeight - 2
 	if visibleLogs < 1 {
 		visibleLogs = 1

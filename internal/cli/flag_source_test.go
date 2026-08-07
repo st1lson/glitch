@@ -16,7 +16,6 @@ func TestFlagSource_Load(t *testing.T) {
 	flags.String("fail-rate", "", "")
 	flags.StringSlice("status", nil, "")
 
-	// Simulate user providing some flags
 	flags.Set("port", "8080")
 	flags.Set("proxy", "http://backend")
 	flags.Set("latency", "1s")
@@ -33,7 +32,7 @@ func TestFlagSource_Load(t *testing.T) {
 	if cfg.Port != 8080 {
 		t.Errorf("expected port 8080, got %d", cfg.Port)
 	}
-	// Host wasn't changed by user, so it should be zero-value in the override config
+
 	if cfg.Host != "" {
 		t.Errorf("expected host to be empty in override config, got %s", cfg.Host)
 	}

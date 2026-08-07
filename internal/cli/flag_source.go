@@ -26,7 +26,6 @@ func NewFlagSource(flags *pflag.FlagSet, args []string) *FlagSource {
 func (s *FlagSource) Load() (*config.Config, error) {
 	var cfg config.Config
 
-	// Basic flags
 	if s.flags.Changed("port") {
 		cfg.Port, _ = s.flags.GetInt("port")
 	}
@@ -58,12 +57,10 @@ func (s *FlagSource) Load() (*config.Config, error) {
 		cfg.ReportFormat, _ = s.flags.GetString("report-format")
 	}
 
-	// Positional arguments (Target file)
 	if len(s.args) > 0 {
 		cfg.File = s.args[0]
 	}
 
-	// Chaos Flags
 	if s.flags.Changed("latency") {
 		latencyStr, _ := s.flags.GetString("latency")
 		latCfg, err := ParseLatency(latencyStr)

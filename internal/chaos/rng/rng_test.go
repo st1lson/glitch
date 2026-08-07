@@ -22,9 +22,7 @@ func TestDeterministicSequence(t *testing.T) {
 func TestDifferentSeeds(t *testing.T) {
 	rng1 := New(42)
 	rng2 := New(43)
-	
-	// While it's theoretically possible for the first float to match,
-	// practically it won't.
+
 	if rng1.Float64() == rng2.Float64() {
 		t.Fatal("Different seeds generated the same first value")
 	}
@@ -33,8 +31,7 @@ func TestDifferentSeeds(t *testing.T) {
 func TestThreadSafety(t *testing.T) {
 	rng := New(42)
 	var wg sync.WaitGroup
-	
-	// Just verify it doesn't crash when accessed concurrently
+
 	for i := 0; i < 100; i++ {
 		wg.Add(1)
 		go func() {
@@ -51,10 +48,10 @@ func TestThreadSafety(t *testing.T) {
 func TestContextPropagation(t *testing.T) {
 	ctx := context.Background()
 	rng := New(42)
-	
+
 	ctxWithRNG := WithRNG(ctx, rng)
 	extractedRNG := FromContext(ctxWithRNG)
-	
+
 	if rng != extractedRNG {
 		t.Fatal("Extracted RNG pointer does not match original")
 	}
@@ -63,11 +60,10 @@ func TestContextPropagation(t *testing.T) {
 func TestFromContextFallback(t *testing.T) {
 	ctx := context.Background()
 	rng := FromContext(ctx)
-	
+
 	if rng == nil {
 		t.Fatal("Expected fallback RNG when context has no RNG, got nil")
 	}
-	
-	// Should be able to use it
+
 	_ = rng.Float64()
 }

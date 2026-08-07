@@ -105,7 +105,7 @@ func (r *ReportManager) getOrCreate(scenarioName string) *ScenarioReport {
 // Report handles incoming log events from the request logger.
 func (r *ReportManager) Report(event logging.LogEvent) {
 	scenario := event.Scenario
-	
+
 	if scenario == "" || !r.state.Has(scenario) {
 		scenario = constants.DefaultScenario
 	}

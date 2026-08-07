@@ -16,9 +16,9 @@ func TestMatchPath(t *testing.T) {
 	}{
 		{"/api/checkout", "/api/checkout", true, 1013},
 		{"/api/checkout", "/api/products", false, 0},
-		{"/api/*", "/api/checkout", true, 5}, // len("/api/") == 5
-		{"*", "/api/checkout", true, 0},      // len("") == 0
-		{"/api/products/*", "/api/products/123", true, 14}, // len("/api/products/") == 14
+		{"/api/*", "/api/checkout", true, 5},
+		{"*", "/api/checkout", true, 0},
+		{"/api/products/*", "/api/products/123", true, 14},
 	}
 
 	for _, tt := range tests {
@@ -60,15 +60,15 @@ func TestEvalChaos(t *testing.T) {
 				Path:   "/api/checkout",
 				Method: "POST",
 				Failure: &config.FailureConfig{
-					Rate: 100, // Very specific
+					Rate: 100,
 				},
 			},
 			{
-				Path:   "/api/checkout",
-				Method: "GET",
+				Path:      "/api/checkout",
+				Method:    "GET",
 				Bandwidth: &bwOverride,
 				Failure: &config.FailureConfig{
-					Rate: 0, // Specifically disabled
+					Rate: 0,
 				},
 			},
 		},
@@ -126,7 +126,6 @@ func TestEvalChaos(t *testing.T) {
 	}
 }
 
-
 func TestEvalChaos_EmptyRoutes(t *testing.T) {
 	cfg := config.Config{
 		Bandwidth: config.Bandwidth{StringValue: "100kbps", BytesPerSecond: 102400},
@@ -142,10 +141,10 @@ func TestEvalChaos_Overrides(t *testing.T) {
 	cfg := config.Config{
 		Routes: []config.RouteConfig{
 			{
-				Path: "*",
-				Stall: &config.StallConfig{Rate: 10},
+				Path:       "*",
+				Stall:      &config.StallConfig{Rate: 10},
 				Corruption: &config.CorruptionConfig{Rate: 20},
-				Latency: &config.LatencyConfig{Fixed: config.Duration{}},
+				Latency:    &config.LatencyConfig{Fixed: config.Duration{}},
 			},
 		},
 	}

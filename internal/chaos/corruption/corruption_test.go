@@ -12,12 +12,11 @@ import (
 )
 
 func TestShouldTrigger(t *testing.T) {
-	// Rate 0 should never corrupt
+
 	if ShouldTrigger(context.Background(), config.CorruptionConfig{Rate: 0}) {
 		t.Error("Expected false with rate 0")
 	}
 
-	// Rate 100 should always corrupt
 	if !ShouldTrigger(context.Background(), config.CorruptionConfig{Rate: 100}) {
 		t.Error("Expected true with rate 100")
 	}
@@ -26,14 +25,12 @@ func TestShouldTrigger(t *testing.T) {
 func TestFieldDropper(t *testing.T) {
 	m := &FieldDropper{}
 
-	// Object
 	obj := map[string]any{"a": 1, "b": 2}
 	res := m.Mutate(context.Background(), obj).(map[string]any)
 	if len(res) != 1 {
 		t.Errorf("Expected 1 key, got %d", len(res))
 	}
 
-	// Array
 	arr := []any{1, 2, 3}
 	resArr := m.Mutate(context.Background(), arr).([]any)
 	if len(resArr) != 2 {
@@ -44,14 +41,12 @@ func TestFieldDropper(t *testing.T) {
 func TestTypeSwapper(t *testing.T) {
 	m := &TypeSwapper{}
 
-	// Object
 	obj := map[string]any{"a": "string"}
 	res := m.Mutate(context.Background(), obj).(map[string]any)
 	if _, ok := res["a"].(int); !ok {
 		t.Error("Expected string to be swapped to int")
 	}
 
-	// Array
 	arr := []any{true}
 	resArr := m.Mutate(context.Background(), arr).([]any)
 	if _, ok := resArr[0].(int); !ok {
@@ -62,14 +57,12 @@ func TestTypeSwapper(t *testing.T) {
 func TestNullInjector(t *testing.T) {
 	m := &NullInjector{}
 
-	// Object
 	obj := map[string]any{"a": "string"}
 	res := m.Mutate(context.Background(), obj).(map[string]any)
 	if res["a"] != nil {
 		t.Error("Expected value to be null")
 	}
 
-	// Array
 	arr := []any{1}
 	resArr := m.Mutate(context.Background(), arr).([]any)
 	if resArr[0] != nil {
@@ -103,9 +96,8 @@ func TestCorruptPayload(t *testing.T) {
 		t.Errorf("Expected name 'drop_field', got %s", name)
 	}
 
-	// Test multi
 	cfgMulti := config.CorruptionConfig{
-		Multi: true,
+		Multi:      true,
 		Strategies: []config.CorruptionStrategy{config.StrategyDropField, config.StrategySwapType, config.StrategyInjectNull, config.StrategyBreakSyntax},
 	}
 	resMulti, nameMulti := CorruptPayload(context.Background(), validJSON, cfgMulti)
@@ -168,7 +160,6 @@ func TestCorruptionWriter_NonJSON(t *testing.T) {
 	}
 }
 
-
 func TestCorruptionWriter_WriteNoHeader(t *testing.T) {
 	rec := httptest.NewRecorder()
 	cw := NewWriter(rec, config.CorruptionConfig{Strategies: []config.CorruptionStrategy{config.StrategyInjectNull}}, context.Background())
@@ -179,18 +170,28 @@ func TestCorruptionWriter_WriteNoHeader(t *testing.T) {
 
 func TestWalkAndMutate_Primitive(t *testing.T) {
 	mDrop := &FieldDropper{}
-	if mDrop.Mutate(context.Background(), "test") != "test" { t.Error("FieldDropper: expected unchanged") }
+	if mDrop.Mutate(context.Background(), "test") != "test" {
+		t.Error("FieldDropper: expected unchanged")
+	}
 
 	mSwap := &TypeSwapper{}
-	if mSwap.Name() != "swap_type" { t.Error("TypeSwapper: name mismatch") }
-	if mSwap.Mutate(context.Background(), nil) == nil { t.Error("TypeSwapper: expected changed for nil") }
-	
+	if mSwap.Name() != "swap_type" {
+		t.Error("TypeSwapper: name mismatch")
+	}
+	if mSwap.Mutate(context.Background(), nil) == nil {
+		t.Error("TypeSwapper: expected changed for nil")
+	}
+
 	mNull := &NullInjector{}
-	if mNull.Mutate(context.Background(), 123) != nil { t.Error("NullInjector: expected nil") }
+	if mNull.Mutate(context.Background(), 123) != nil {
+		t.Error("NullInjector: expected nil")
+	}
 
 	mBreak := &SyntaxBreaker{}
-	if mBreak.Mutate(context.Background(), "not bytes") != "not bytes" { t.Error("SyntaxBreaker: expected unchanged") }
-	
+	if mBreak.Mutate(context.Background(), "not bytes") != "not bytes" {
+		t.Error("SyntaxBreaker: expected unchanged")
+	}
+
 	validJSON := []byte(`"just a string"`)
 	mBreak.Mutate(context.Background(), validJSON)
 }
@@ -202,4 +203,3 @@ func TestTypeSwapper_Primitives(t *testing.T) {
 	m.Mutate(context.Background(), []any{123.45})
 	m.Mutate(context.Background(), []any{nil})
 }
-

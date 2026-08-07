@@ -33,7 +33,7 @@ func (m *Manager) Baseline() Config {
 func (m *Manager) Resolve(scenario string) Config {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	if cfg, ok := m.scenarios[scenario]; ok {
 		return *cfg
 	}
@@ -62,12 +62,12 @@ func (m *Manager) Overlay(scenario string, override *Config) {
 
 	cfg, ok := m.scenarios[scenario]
 	if !ok {
-		// Start from baseline
+
 		newCfg := m.baseline
 		cfg = &newCfg
 		m.scenarios[scenario] = cfg
 	}
-	
+
 	cfg.MergeChaosOnly(override)
 }
 
@@ -100,6 +100,6 @@ func (m *Manager) Update(fn func(cfg *Config)) {
 		cfg = &newCfg
 		m.scenarios[""] = cfg
 	}
-	
+
 	fn(cfg)
 }

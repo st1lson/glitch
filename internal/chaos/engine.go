@@ -93,11 +93,10 @@ func (e *Engine) Middleware(next http.Handler) http.Handler {
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Read current configuration safely.
+
 		scenario := r.Header.Get(constants.HeaderScenario)
 		cfg := e.state.Resolve(scenario)
 
-		// Fast path: nothing enabled, skip all overhead.
 		if !cfg.HasChaos() {
 			next.ServeHTTP(w, r)
 			return
@@ -105,31 +104,26 @@ func (e *Engine) Middleware(next http.Handler) http.Handler {
 
 		eff := evalChaos(cfg, r)
 
-		// Secondary fast path: if specific route overrides disabled all chaos.
 		if !eff.Latency.Enabled() && !eff.Failure.Enabled() && eff.Bandwidth.BytesPerSecond == 0 && !eff.Corruption.Enabled() && !eff.Stall.Enabled() && !eff.Realtime.Enabled() {
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		// Inject effective chaos into context
 		ctx := setEffectiveChaos(r.Context(), eff)
 
-		// Setup RNG for this request
 		if cfg.Seed != nil {
-			// Map unknown scenarios to default cache key to prevent unbounded map growth (DoS)
 			cacheKey := scenario
-			if scenario != "" && !e.state.Has(scenario) {
-				cacheKey = ""
+			// Map unknown scenarios to default cache key to prevent unbounded map growth (DoS)
+			if cacheKey == "" || !e.state.Has(cacheKey) {
+				cacheKey = constants.DefaultScenario
 			}
 			scenarioRNG := e.getRNG(cacheKey, *cfg.Seed)
 			ctx = rng.WithRNG(ctx, scenarioRNG)
 		}
 
-		// Setup chaos info for this request
 		info := &ChaosInfo{}
 		ctx = context.WithValue(ctx, chaosContextKey{}, info)
 
-		// Pass down the chain
 		chaosChain.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

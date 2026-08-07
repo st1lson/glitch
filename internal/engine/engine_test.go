@@ -17,7 +17,7 @@ func createTempFile(t *testing.T, content string) string {
 }
 
 func TestNew_ProxyEngine(t *testing.T) {
-	// Proxy URL takes precedence
+
 	eng, err := New("", "http://example.com", false)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)

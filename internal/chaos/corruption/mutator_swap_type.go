@@ -12,7 +12,7 @@ type TypeSwapper struct{}
 func (m *TypeSwapper) Name() string { return "swap_type" }
 
 func (m *TypeSwapper) Mutate(ctx context.Context, data any) any {
-	// If given a map or slice, pick a random element and swap it
+
 	switch v := data.(type) {
 	case map[string]any:
 		if len(v) == 0 {
@@ -40,11 +40,11 @@ func (m *TypeSwapper) Mutate(ctx context.Context, data any) any {
 func swapPrimitive(val any) any {
 	switch val.(type) {
 	case string:
-		return 42 // string -> int
+		return 42
 	case float64, int:
-		return "corrupted_string" // number -> string
+		return "corrupted_string"
 	case bool:
-		return 1 // bool -> number
+		return 1
 	case nil:
 		return "not_null"
 	default:

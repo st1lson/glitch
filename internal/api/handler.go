@@ -11,15 +11,13 @@ import (
 // RegisterRoutes mounts generic REST-style CRUD routes.
 // It uses URL parameters so any collection name is supported dynamically.
 func RegisterRoutes(r chi.Router, store storage.Store) {
-	// Root endpoint: list all available collections with their paths.
+
 	r.Get("/", rootHandler(store))
 
-	// Generic collection routes
 	r.Route("/{collection}", func(cr chi.Router) {
 		cr.Get("/", listHandler(store))
 		cr.Post("/", createHandler(store))
 
-		// Item specific routes
 		cr.Get("/{id}", getHandler(store))
 		cr.Put("/{id}", updateHandler(store))
 		cr.Patch("/{id}", patchHandler(store))

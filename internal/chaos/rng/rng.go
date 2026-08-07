@@ -39,8 +39,7 @@ func FromContext(ctx context.Context) *rand.Rand {
 
 // New creates a new thread-safe *rand.Rand initialized with the given seed.
 func New(seed int64) *rand.Rand {
-	// Initialize a PCG source using the provided seed.
-	// PCG takes two uint64 values. We derive them from the single seed.
+
 	src := rand.NewPCG(uint64(seed), uint64(seed)+1)
 	return rand.New(&lockedSource{src: src})
 }

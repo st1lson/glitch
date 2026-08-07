@@ -61,8 +61,6 @@ func isOpenAPI(data []byte) bool {
 		bytes.Contains(data, []byte("\"swagger\":"))
 }
 
-// --- Strategies ---
-
 type ProxyEngine struct {
 	targetURL string
 	handler   http.Handler

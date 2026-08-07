@@ -19,7 +19,6 @@ import (
 func ParseLatency(val string) (config.LatencyConfig, error) {
 	var cfg config.LatencyConfig
 
-	// Distribution format: "distribution:min,max"
 	if idx := strings.Index(val, ":"); idx != -1 {
 		dist := val[:idx]
 		if dist != "normal" && dist != "uniform" {
@@ -48,10 +47,6 @@ func ParseLatency(val string) (config.LatencyConfig, error) {
 		return cfg, nil
 	}
 
-	// Range format: "min-max" (e.g. "500ms-3s")
-	// We split on "-" but need to be careful with durations like "500ms".
-	// Strategy: find the first "-" that is preceded by a letter or digit that
-	// could end a duration token (s, m, h, etc.) and followed by a digit.
 	if dashIdx := findRangeSeparator(val); dashIdx != -1 {
 		minStr := val[:dashIdx]
 		maxStr := val[dashIdx+1:]
@@ -71,7 +66,6 @@ func ParseLatency(val string) (config.LatencyConfig, error) {
 		return cfg, nil
 	}
 
-	// Fixed duration: "2s"
 	d, err := time.ParseDuration(val)
 	if err != nil {
 		return cfg, fmt.Errorf("invalid latency duration %q: %w", val, err)

@@ -25,10 +25,9 @@ func (t *Writer) Write(p []byte) (int, error) {
 		return t.ResponseWriter.Write(p)
 	}
 
-	// Calculate a chunk size that represents ~100ms of data
 	chunkSize := t.bps / 10
 	if chunkSize < 1 {
-		chunkSize = 1 // Minimum 1 byte per chunk
+		chunkSize = 1
 	}
 
 	totalWritten := 0
@@ -45,14 +44,12 @@ func (t *Writer) Write(p []byte) (int, error) {
 			return totalWritten, err
 		}
 
-		// Flush immediately to the network so the client receives the chunk
 		if f, ok := t.ResponseWriter.(http.Flusher); ok {
 			f.Flush()
 		}
 
 		p = p[writeSize:]
 
-		// Sleep to simulate network delay for this chunk
 		if len(p) > 0 {
 			time.Sleep(100 * time.Millisecond)
 		}

@@ -14,7 +14,7 @@ func NewProfileSource(name string) *ProfileSource {
 // It maps the Profile's Latency and Failure directly into the Config.
 func (s *ProfileSource) Load() (*Config, error) {
 	if s.Name == "" {
-		return nil, nil // No profile specified, skip.
+		return nil, nil
 	}
 
 	profile, err := LoadProfile(s.Name)

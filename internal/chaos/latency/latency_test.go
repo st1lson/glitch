@@ -47,7 +47,7 @@ func TestComputeDelay(t *testing.T) {
 }
 
 func TestComputeDelay_Ranges(t *testing.T) {
-	// Test range distributions (uniform and normal)
+
 	cfgUniform := config.LatencyConfig{
 		Min: config.Duration{Duration: 10 * time.Millisecond},
 		Max: config.Duration{Duration: 50 * time.Millisecond},

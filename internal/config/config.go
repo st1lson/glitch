@@ -148,9 +148,9 @@ func (d *Duration) UnmarshalYAML(unmarshal func(any) error) error {
 
 // Config holds all configuration for the Glitch server.
 type Config struct {
-	Port     int    `yaml:"port" json:"port"`
-	Host     string `yaml:"host" json:"host"`
-	File     string `yaml:"file" json:"file"`
+	Port               int    `yaml:"port" json:"port"`
+	Host               string `yaml:"host" json:"host"`
+	File               string `yaml:"file" json:"file"`
 	Proxy              string `yaml:"proxy" json:"proxy"`
 	Verbose            bool   `yaml:"verbose" json:"verbose"`
 	ReadOnly           bool   `yaml:"read_only" json:"read_only"`
@@ -158,7 +158,7 @@ type Config struct {
 	ControlToken       string `yaml:"control_token" json:"control_token"`
 	InsecureControlAPI bool   `yaml:"insecure_control_api" json:"insecure_control_api"`
 
-	Seed     *int64 `yaml:"seed,omitempty" json:"seed,omitempty"`
+	Seed *int64 `yaml:"seed,omitempty" json:"seed,omitempty"`
 
 	ReportPath   string `yaml:"report_path,omitempty" json:"report_path,omitempty"`
 	ReportFormat string `yaml:"report_format,omitempty" json:"report_format,omitempty"`

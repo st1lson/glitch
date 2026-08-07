@@ -3,11 +3,11 @@ package realtime
 import (
 	"bytes"
 	"context"
-	"github.com/st1lson/glitch/internal/chaos/rng"
 	"net/http"
 	"sync"
 
 	"github.com/st1lson/glitch/internal/chaos/latency"
+	"github.com/st1lson/glitch/internal/chaos/rng"
 	"github.com/st1lson/glitch/internal/config"
 )
 
@@ -60,11 +60,11 @@ func (s *SSEInterceptor) Write(p []byte) (int, error) {
 
 func (s *SSEInterceptor) processEvent(event []byte) {
 	if s.config.DropRate > 0 && rng.FromContext(s.ctx).Float64()*100 < s.config.DropRate {
-		return // Drop event entirely
+		return
 	}
 
 	if s.config.DisconnectRate > 0 && rng.FromContext(s.ctx).Float64()*100 < s.config.DisconnectRate {
-		panic(http.ErrAbortHandler) // Forcefully drop connection
+		panic(http.ErrAbortHandler)
 	}
 
 	if s.config.OutOfOrder {
@@ -72,16 +72,13 @@ func (s *SSEInterceptor) processEvent(event []byte) {
 
 		s.msgQueue = append(s.msgQueue, event)
 
-		// If we haven't hit the buffer limit, randomly decide to wait
 		if len(s.msgQueue) < maxBuf && rng.FromContext(s.ctx).Float64() < 0.5 {
 			return
 		}
 
-		// Pop a random event
 		popIdx := rng.FromContext(s.ctx).IntN(len(s.msgQueue))
 		eventToDeliver := s.msgQueue[popIdx]
 
-		// Remove from queue
 		s.msgQueue = append(s.msgQueue[:popIdx], s.msgQueue[popIdx+1:]...)
 		s.deliverEvent(eventToDeliver)
 		return
@@ -92,11 +89,7 @@ func (s *SSEInterceptor) processEvent(event []byte) {
 
 func (s *SSEInterceptor) deliverEvent(event []byte) {
 	if s.config.Latency.Enabled() {
-		// Do latency injection synchronously for now to preserve order if OutOfOrder is false,
-		// or randomly if it's true.
-		// Since this is called from the Write method which is synchronous from ReverseProxy's perspective,
-		// adding latency here will stall the reverse proxy copy loop, which correctly applies latency
-		// to the stream.
+
 		latency.Inject(s.ctx, s.config.Latency)
 	}
 
@@ -110,7 +103,6 @@ func (s *SSEInterceptor) Flush() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Flush any remaining buffered out-of-order messages
 	for len(s.msgQueue) > 0 {
 		popIdx := rng.FromContext(s.ctx).IntN(len(s.msgQueue))
 		event := s.msgQueue[popIdx]

@@ -17,27 +17,20 @@ import (
 func NewRouter(state *config.Manager, gate *control.Gatekeeper, apiHandler http.Handler, reporter logging.EventReporter, reports *reporting.ReportManager) chi.Router {
 	r := chi.NewRouter()
 
-	// Recovery middleware — catch panics and respond with 500.
 	r.Use(middleware.Recoverer)
 
-	// CORS — fully permissive for local dev use.
 	r.Use(corsMiddleware)
 
-	// Control API — bypasses chaos and pause gate.
 	r.Mount(constants.ControlRoutePrefix, control.NewHandler(state, gate, reports))
 
-	// For the rest of the routes, apply logging, pause gate, and chaos.
 	r.Group(func(r chi.Router) {
 		r.Use(logging.RequestLogger(state, reporter))
 
-		// Pause gate — blocks non-control requests while paused.
 		r.Use(control.PauseMiddleware(gate))
 
-		// Chaos middleware — always mounted so it can be dynamically toggled.
 		engine := chaos.NewEngine(state)
 		r.Use(engine.Middleware)
 
-		// Mount the specific API handler (JSON, Proxy, or OpenAPI)
 		r.Mount("/", apiHandler)
 	})
 

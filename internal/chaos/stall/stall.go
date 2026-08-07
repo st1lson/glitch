@@ -52,7 +52,7 @@ func (s *Writer) WriteHeader(statusCode int) {
 func (s *Writer) Write(p []byte) (int, error) {
 	if s.stalled {
 		if s.mode == config.StallModeHang {
-			select {} // block indefinitely
+			select {}
 		}
 		panic(http.ErrAbortHandler)
 	}
@@ -60,7 +60,6 @@ func (s *Writer) Write(p []byte) (int, error) {
 	writeSize := len(p)
 	var stallAfterWrite bool
 
-	// Determine threshold
 	var threshold int64
 	if s.totalBytes > 0 {
 		threshold = int64(float64(s.totalBytes) * s.dropAtRatio)
@@ -72,11 +71,11 @@ func (s *Writer) Write(p []byte) (int, error) {
 	}
 
 	if threshold <= 0 {
-		threshold = 1 // Drop after at least 1 byte if configured 0%
+		threshold = 1
 	}
 
 	if s.writtenBytes+int64(writeSize) >= threshold {
-		// We should stall during this write.
+
 		allowed := threshold - s.writtenBytes
 		if allowed < 0 {
 			allowed = 0
@@ -99,7 +98,7 @@ func (s *Writer) Write(p []byte) (int, error) {
 	if stallAfterWrite {
 		s.stalled = true
 		if s.mode == config.StallModeHang {
-			select {} // block indefinitely
+			select {}
 		}
 		panic(http.ErrAbortHandler)
 	}

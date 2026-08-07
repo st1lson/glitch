@@ -30,13 +30,10 @@ func TestStallWriter_DropWithContentLength(t *testing.T) {
 	rec := httptest.NewRecorder()
 	sw := NewWriter(rec, config.StallModeDrop, 50)
 
-	// Simulate handler setting Content-Length
-	payload := []byte("1234567890") // 10 bytes
+	payload := []byte("1234567890")
 	sw.Header().Set("Content-Length", "10")
 	sw.WriteHeader(http.StatusOK)
 
-	// Threshold is 50% of 10 bytes = 5 bytes.
-	// Write 4 bytes
 	n, err := sw.Write(payload[:4])
 	if n != 4 || err != nil {
 		t.Fatalf("first write failed: %d, %v", n, err)
@@ -46,7 +43,6 @@ func TestStallWriter_DropWithContentLength(t *testing.T) {
 		t.Errorf("expected 4 bytes written, got %d", rec.Body.Len())
 	}
 
-	// Write the rest, should trigger stall and panic
 	_, _ = sw.Write(payload[4:])
 }
 
@@ -57,11 +53,10 @@ func TestStallWriter_DropWithoutContentLength(t *testing.T) {
 	sw := NewWriter(rec, config.StallModeDrop, 50)
 	sw.WriteHeader(http.StatusOK)
 
-	// Threshold for chunked w/ dropAt 50% is 100KB (102400 bytes).
 	chunk := make([]byte, 50*1024)
-	sw.Write(chunk) // 50KB written
+	sw.Write(chunk)
 
-	sw.Write(chunk) // 100KB written, this should reach the threshold and stall (panic)
+	sw.Write(chunk)
 }
 
 func TestShouldTrigger(t *testing.T) {
@@ -75,14 +70,14 @@ func TestShouldTrigger(t *testing.T) {
 
 func TestStallWriter_DropMode(t *testing.T) {
 	rec := httptest.NewRecorder()
-	sw := NewWriter(rec, "drop", 1) // drop at 1%
+	sw := NewWriter(rec, "drop", 1)
 	sw.Header().Set("Content-Length", "100")
-	sw.WriteHeader(http.StatusOK) // parses Content-Length -> totalBytes = 100, threshold = 1
+	sw.WriteHeader(http.StatusOK)
 
 	defer func() {
 		if r := recover(); r != http.ErrAbortHandler {
 			t.Errorf("Expected panic with http.ErrAbortHandler, got %v", r)
 		}
 	}()
-	sw.Write([]byte("test test test")) // len > 1, so it will panic
+	sw.Write([]byte("test test test"))
 }

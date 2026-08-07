@@ -18,7 +18,7 @@ func createTempYAML(t *testing.T, content string) string {
 }
 
 func TestLoadProfile_Embedded(t *testing.T) {
-	// "mobile" is one of the built-in profiles.
+
 	profile, err := LoadProfile("mobile")
 	if err != nil {
 		t.Fatalf("expected no error loading embedded profile 'mobile', got: %v", err)
@@ -95,10 +95,9 @@ func TestLoadProfile_CustomProfile(t *testing.T) {
 }
 
 func TestApplyProfile(t *testing.T) {
-	// Initial clean config
+
 	cfg := DefaultConfig()
 
-	// Build a mock profile to apply
 	p := &Profile{
 		Latency: LatencyConfig{
 			Fixed: Duration{Duration: 2 * time.Second},

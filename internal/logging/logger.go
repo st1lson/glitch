@@ -62,14 +62,12 @@ func RequestLogger(state *config.Manager, reporter EventReporter) func(http.Hand
 				}
 			}
 
-			// Wrap the response writer to capture the status code and bytes written.
 			rw := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
 
 			next.ServeHTTP(rw, r)
 
 			duration := time.Since(start)
 
-			// Build the log line.
 			method := colorMethod(r.Method)
 			status := colorStatus(rw.statusCode)
 			path := r.URL.RequestURI()
@@ -86,7 +84,6 @@ func RequestLogger(state *config.Manager, reporter EventReporter) func(http.Hand
 				Scenario:     r.Header.Get(constants.HeaderScenario),
 			}
 
-			// Append chaos annotations if present.
 			if info := chaos.GetChaosInfo(r); info != nil {
 				event.ChaosLatency = info.LatencyAdded
 				event.ChaosFailure = info.FailureCode
@@ -106,7 +103,6 @@ func RequestLogger(state *config.Manager, reporter EventReporter) func(http.Hand
 				fmt.Println(line)
 			}
 
-			// Verbose: print headers and body.
 			if verbose && reporter == nil {
 				printVerbose(r, bodyBytes)
 			}
@@ -145,8 +141,6 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 func (rw *responseWriter) Unwrap() http.ResponseWriter {
 	return rw.ResponseWriter
 }
-
-// --- Color helpers ---
 
 // colorMethod returns the HTTP method string colored by convention.
 func colorMethod(method string) string {

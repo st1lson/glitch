@@ -38,8 +38,7 @@ func (w *WSHijackInterceptor) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	
-	// Flush any pending data
+
 	rw.Flush()
 
 	wrappedConn := &WSConnInterceptor{
@@ -48,8 +47,6 @@ func (w *WSHijackInterceptor) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 		ctx:    w.ctx,
 	}
 
-	// We create a new bufio.ReadWriter using the wrapped connection
-	// so that subsequent reads/writes go through our chaos logic.
 	wrappedRW := bufio.NewReadWriter(bufio.NewReader(wrappedConn), bufio.NewWriter(wrappedConn))
 
 	return wrappedConn, wrappedRW, nil

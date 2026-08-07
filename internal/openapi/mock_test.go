@@ -122,7 +122,7 @@ paths:
 			if len(pets) == 0 {
 				t.Errorf("Expected at least one mock pet in response array")
 			} else {
-				// Just ensure 'name' field is present in the mocked object
+
 				if _, ok := pets[0]["name"]; !ok {
 					t.Errorf("Expected mocked object to have 'name' field")
 				}

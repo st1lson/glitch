@@ -37,7 +37,6 @@ func computeDelay(ctx context.Context, cfg config.LatencyConfig) time.Duration {
 		return cfg.Fixed.Duration
 	}
 
-	// If no fixed or range is provided, return 0
 	if cfg.Min.Duration <= 0 && cfg.Max.Duration <= 0 {
 		return 0
 	}
@@ -47,12 +46,11 @@ func computeDelay(ctx context.Context, cfg config.LatencyConfig) time.Duration {
 
 	var delay time.Duration
 	if cfg.Distribution == "normal" {
-		// Use a normal distribution centered between min and max
+
 		mean := (minF + maxF) / 2
-		stdDev := (maxF - minF) / 6 // 99.7% of values fall within 3 stdDevs
+		stdDev := (maxF - minF) / 6
 		val := rng.FromContext(ctx).NormFloat64()*stdDev + mean
 
-		// Clamp the result to [min, max]
 		if val < minF {
 			val = minF
 		} else if val > maxF {
@@ -60,7 +58,7 @@ func computeDelay(ctx context.Context, cfg config.LatencyConfig) time.Duration {
 		}
 		delay = time.Duration(val)
 	} else {
-		// Default to uniform distribution
+
 		diff := cfg.Max.Duration - cfg.Min.Duration
 		if diff <= 0 {
 			return cfg.Min.Duration

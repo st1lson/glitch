@@ -32,10 +32,6 @@ func TestRequestLogger(t *testing.T) {
 
 	req := httptest.NewRequest("POST", "/api/test", bytes.NewBuffer([]byte(`{"test":1}`)))
 	req.Header.Set("Content-Type", "application/json")
-	
-	// To inject chaos info without exposing setChaosInfo from chaos pkg, 
-	// actually the chaos info is passed through chaos package middleware.
-	// But we can test buildChaosAnnotations directly.
 
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
@@ -51,7 +47,7 @@ func TestRequestLogger(t *testing.T) {
 func TestRequestLogger_Verbose(t *testing.T) {
 	state := config.NewManager(config.Config{Verbose: true})
 
-	mw := RequestLogger(state, nil) // no reporter, prints to stdout
+	mw := RequestLogger(state, nil)
 	handler := mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("hello"))
@@ -60,22 +56,21 @@ func TestRequestLogger_Verbose(t *testing.T) {
 	req := httptest.NewRequest("GET", "/verbose", bytes.NewBuffer([]byte(`{"test":1}`)))
 	req.Header.Set("X-Test", "1")
 	rr := httptest.NewRecorder()
-	
-	// This will just print to stdout, we just ensure it doesn't panic
+
 	handler.ServeHTTP(rr, req)
 }
 
 func TestColorMethod(t *testing.T) {
 	tests := []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, "UNKNOWN"}
 	for _, m := range tests {
-		colorMethod(m) // just checking it runs without panic
+		colorMethod(m)
 	}
 }
 
 func TestColorStatus(t *testing.T) {
 	tests := []int{200, 404, 500, 100}
 	for _, s := range tests {
-		colorStatus(s) // just checking it runs without panic
+		colorStatus(s)
 	}
 }
 

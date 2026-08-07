@@ -22,7 +22,7 @@ func TestBuilder_Build(t *testing.T) {
 	})
 
 	builder.AddSource(&mockSource{
-		cfg: &Config{Port: 9090}, // Should override 8080
+		cfg: &Config{Port: 9090},
 	})
 
 	cfg, err := builder.Build()

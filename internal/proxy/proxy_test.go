@@ -10,10 +10,10 @@ import (
 
 func TestNewProxyHandler(t *testing.T) {
 	t.Run("Invalid target URL", func(t *testing.T) {
-		// Control character in URL scheme causes error in url.Parse
+
 		_, err := NewProxyHandler("http://192.168.0.%31:8080/")
-		// Actually "http://192.168.0.%31:8080/" parses in modern Go, let's use something truly invalid
-		_, err2 := NewProxyHandler("http://[fe80::1%en0]/") // IPv6 zone id without bracket escaping could be valid or invalid, but an invalid character in the scheme is definitely invalid:
+
+		_, err2 := NewProxyHandler("http://[fe80::1%en0]/")
 		_, err3 := NewProxyHandler("http\n://foo.com")
 		if err3 == nil {
 			t.Errorf("NewProxyHandler() expected error for invalid URL")
@@ -38,7 +38,7 @@ func TestNewProxyHandler(t *testing.T) {
 		}
 
 		req := httptest.NewRequest(http.MethodGet, "http://localhost:3000/api/test", nil)
-		// Set a dummy host that isn't the backend
+
 		req.Host = "localhost:3000"
 
 		rec := httptest.NewRecorder()

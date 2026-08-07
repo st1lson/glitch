@@ -61,7 +61,6 @@ func (s *JSONStore) List(collection string) ([]map[string]any, error) {
 		return nil, ErrCollection
 	}
 
-	// Return a copy to prevent external mutation.
 	result := make([]map[string]any, len(items))
 	for i, item := range items {
 		result[i] = copyMap(item)
@@ -91,7 +90,7 @@ func (s *JSONStore) Create(collection string, item map[string]any) (map[string]a
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	items := s.data[collection] // nil is fine; we'll append to it
+	items := s.data[collection]
 
 	newItem := copyMap(item)
 	if _, hasID := newItem["id"]; !hasID {
@@ -118,7 +117,7 @@ func (s *JSONStore) Update(collection string, id string, item map[string]any) (m
 	for i, existing := range items {
 		if matchID(existing["id"], id) {
 			updated := copyMap(item)
-			updated["id"] = existing["id"] // Preserve the original ID value/type.
+			updated["id"] = existing["id"]
 			items[i] = updated
 
 			if err := s.persist(); err != nil {
@@ -143,7 +142,7 @@ func (s *JSONStore) Patch(collection string, id string, fields map[string]any) (
 		if matchID(existing["id"], id) {
 			for k, v := range fields {
 				if k == "id" {
-					continue // Don't allow overwriting the ID via patch.
+					continue
 				}
 				existing[k] = v
 			}
@@ -220,7 +219,7 @@ func (s *JSONStore) nextID(items []map[string]any) int {
 func matchID(stored any, target string) bool {
 	switch v := stored.(type) {
 	case float64:
-		// Compare as string: float64(1) -> "1", float64(1.5) -> "1.5".
+
 		return strconv.FormatFloat(v, 'f', -1, 64) == target
 	case string:
 		return v == target

@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"testing"
 	"github.com/st1lson/glitch/internal/config"
+	"testing"
 )
 
 func TestParseFailRate(t *testing.T) {
@@ -41,7 +41,7 @@ func TestParseStatusFlags(t *testing.T) {
 		{[]string{"500:5"}, 1, false},
 		{[]string{"invalid"}, 0, true},
 		{[]string{"500:abc"}, 0, true},
-		{[]string{"999:10"}, 0, true}, // Invalid HTTP code
+		{[]string{"999:10"}, 0, true},
 	}
 
 	for _, tt := range tests {
@@ -66,7 +66,7 @@ func TestParseLatency(t *testing.T) {
 		{"normal:500ms,2s", "normal", false},
 		{"uniform:1s,3s", "uniform", false},
 		{"invalid:1s,3s", "", true},
-		{"normal:1s", "", true}, // missing max
+		{"normal:1s", "", true},
 	}
 
 	for _, tt := range tests {

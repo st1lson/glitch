@@ -14,8 +14,7 @@ func Run(ctx context.Context, state *config.Manager) {
 	for {
 		cfg := state.Get()
 		if !cfg.Monkey.Enabled || len(cfg.Monkey.Phases) == 0 {
-			// If disabled or misconfigured, wait and check again.
-			// This allows monkey mode to be toggled dynamically.
+
 			select {
 			case <-ctx.Done():
 				return
@@ -25,7 +24,7 @@ func Run(ctx context.Context, state *config.Manager) {
 		}
 
 		for _, phase := range cfg.Monkey.Phases {
-			// Apply the current phase's chaos configuration
+
 			state.Update(func(c *config.Config) {
 				c.Bandwidth = phase.Bandwidth
 				c.Latency = phase.Latency
@@ -36,20 +35,20 @@ func Run(ctx context.Context, state *config.Manager) {
 
 			duration := phase.Duration.Duration
 			if duration <= 0 {
-				duration = 10 * time.Second // Fallback duration if not specified
+				duration = 10 * time.Second
 			}
 
-			// Wait for the duration of the phase or context cancellation
 			select {
 			case <-ctx.Done():
 				return
 			case <-time.After(duration):
-				// Phase duration elapsed, proceed to next phase
+
 			}
 
-			// Re-check if monkey was disabled during the sleep
+			// If disabled or misconfigured, wait and check again.
+			// This allows monkey mode to be toggled dynamically.
 			if !state.Get().Monkey.Enabled {
-				break // Exit the phases loop, go back to the outer loop to wait
+				break
 			}
 		}
 	}

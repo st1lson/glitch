@@ -23,12 +23,11 @@ func listHandler(store storage.Store) http.HandlerFunc {
 			return
 		}
 
-		// Ensure we never marshal nil as JSON null.
 		if items == nil {
+			// Ensure we never marshal nil as JSON null.
 			items = []map[string]any{}
 		}
 
-		// Apply filtering, sorting, and pagination.
 		result, total := ApplyQuery(items, r.URL.Query())
 
 		w.Header().Set(constants.HeaderTotalCount, strconv.Itoa(total))
@@ -130,8 +129,6 @@ func deleteHandler(store storage.Store) http.HandlerFunc {
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
-
-// --- JSON helpers ---
 
 // writeJSON marshals data as JSON and writes it with the given status code.
 func writeJSON(w http.ResponseWriter, status int, data any) {

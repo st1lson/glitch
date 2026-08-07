@@ -97,7 +97,7 @@ func TestJSONStore_Concurrency(t *testing.T) {
 	store, _ := NewJSONStore(path, false)
 
 	var wg sync.WaitGroup
-	// Spawn 50 goroutines to concurrently create users
+
 	for i := 0; i < 50; i++ {
 		wg.Add(1)
 		go func(id int) {

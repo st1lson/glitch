@@ -25,23 +25,18 @@ func CalculateLayout(termWidth, termHeight int, headerStr string) Layout {
 	l.TotalWidth = termWidth
 	l.TotalHeight = termHeight
 
-	// If terminal is impossibly small, just return empty layout
 	if termWidth < 10 || termHeight < 10 {
 		return l
 	}
 
-	// Measure header height exactly
 	hTitleFrame, _ := titleStyle.GetFrameSize()
 	header := titleStyle.Width(termWidth - 1 - hTitleFrame).Align(lipgloss.Center).Render(headerStr)
 	l.HeaderHeight = lipgloss.Height(header)
 
-	// Determine available space for the main dashboard
 	availHeight := termHeight - l.HeaderHeight
 
-	// Extract the physical bounds of the outer dashboard frame
 	hFrame, vFrame := outerStyle.GetFrameSize()
 
-	// We subtract 1 from width and height as a standard terminal layout safety margin.
 	l.ContentWidth = termWidth - hFrame - 1
 	l.ContentHeight = availHeight - vFrame - 1
 

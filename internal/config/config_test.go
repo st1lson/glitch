@@ -11,9 +11,8 @@ func TestConfig_HasChaos(t *testing.T) {
 	}
 
 	withLatency := Config{Latency: LatencyConfig{Fixed: Duration{}}}
-	withLatency.Latency.Fixed.Duration = 100 // some value to enable it maybe? 
-	// Wait, HasChaos just checks if Latency.Enabled(), etc.
-	// We'll set something to guarantee it's enabled.
+	withLatency.Latency.Fixed.Duration = 100
+
 }
 
 func TestConfig_EnabledMethods(t *testing.T) {

@@ -52,7 +52,7 @@ func FailureMiddleware() func(http.Handler) http.Handler {
 						info.FailureCode = code
 					}
 					http.Error(w, http.StatusText(code), code)
-					return // short circuit
+					return
 				}
 			}
 			next.ServeHTTP(w, r)
@@ -83,7 +83,7 @@ func CorruptionMiddleware() func(http.Handler) http.Handler {
 				if info := GetChaosInfo(r); info != nil {
 					info.Corrupted = true
 				}
-				
+
 				next.ServeHTTP(cw, r)
 				cw.Flush()
 				return
