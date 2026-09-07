@@ -1,38 +1,13 @@
 package chaos
 
 import (
+	"bytes"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/st1lson/glitch/internal/config"
 )
-
-func TestMatchPath(t *testing.T) {
-	tests := []struct {
-		pattern  string
-		path     string
-		expected bool
-		score    int
-	}{
-		{"/api/checkout", "/api/checkout", true, 1013},
-		{"/api/checkout", "/api/products", false, 0},
-		{"/api/*", "/api/checkout", true, 5},
-		{"*", "/api/checkout", true, 0},
-		{"/api/products/*", "/api/products/123", true, 14},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.pattern+"_"+tt.path, func(t *testing.T) {
-			matched, score := matchPath(tt.pattern, tt.path)
-			if matched != tt.expected {
-				t.Errorf("expected %v, got %v", tt.expected, matched)
-			}
-			if score != tt.score {
-				t.Errorf("expected score %v, got %v", tt.score, score)
-			}
-		})
-	}
-}
 
 func TestEvalChaos(t *testing.T) {
 	bwGlobal := config.Bandwidth{StringValue: "100kbps", BytesPerSecond: 102400}
@@ -114,7 +89,7 @@ func TestEvalChaos(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(tt.method, tt.path, nil)
-			eff := evalChaos(cfg, req)
+			eff := evalChaos(cfg, req, nil)
 
 			if eff.Failure.Rate != tt.expectedFail {
 				t.Errorf("expected failure rate %v, got %v", tt.expectedFail, eff.Failure.Rate)
@@ -131,7 +106,7 @@ func TestEvalChaos_EmptyRoutes(t *testing.T) {
 		Bandwidth: config.Bandwidth{StringValue: "100kbps", BytesPerSecond: 102400},
 	}
 	req := httptest.NewRequest("GET", "/", nil)
-	eff := evalChaos(cfg, req)
+	eff := evalChaos(cfg, req, nil)
 	if eff.Bandwidth.BytesPerSecond != 102400 {
 		t.Errorf("Expected 100kbps")
 	}
@@ -149,8 +124,86 @@ func TestEvalChaos_Overrides(t *testing.T) {
 		},
 	}
 	req := httptest.NewRequest("GET", "/", nil)
-	eff := evalChaos(cfg, req)
+	eff := evalChaos(cfg, req, nil)
 	if eff.Stall.Rate != 10 || eff.Corruption.Rate != 20 {
 		t.Errorf("Overrides failed")
 	}
+}
+
+func TestEvalChaos_RichPredicates(t *testing.T) {
+	opIdx := NewOperationIndex()
+	opIdx.Register("getProduct", "GET", "/products/{id}")
+
+	cfg := config.Config{
+		Failure: config.FailureConfig{Rate: 0},
+		Routes: []config.RouteConfig{
+			// 1. Operation ID route
+			{
+				OperationID: "getProduct",
+				Failure:     &config.FailureConfig{Rate: 99},
+			},
+			// 2. Header route
+			{
+				Path:    "/api/*",
+				Headers: map[string]string{"X-Chaos": "true"},
+				Failure: &config.FailureConfig{Rate: 88},
+			},
+			// 3. Query route
+			{
+				Path:    "/search",
+				Query:   map[string]string{"q": "test"},
+				Failure: &config.FailureConfig{Rate: 77},
+			},
+			// 4. Body route
+			{
+				Path:   "/login",
+				Method: "POST",
+				Body: []config.BodyPredicate{
+					{Field: "user.role", Op: "eq", Value: "guest"},
+				},
+				Failure: &config.FailureConfig{Rate: 66},
+			},
+		},
+	}
+
+	t.Run("Operation ID match", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/products/42", nil)
+		eff := evalChaos(cfg, req, opIdx)
+		if eff.Failure.Rate != 99 {
+			t.Errorf("expected failure rate 99, got %v", eff.Failure.Rate)
+		}
+	})
+
+	t.Run("Header match", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/data", nil)
+		req.Header.Set("X-Chaos", "true")
+		eff := evalChaos(cfg, req, opIdx)
+		if eff.Failure.Rate != 88 {
+			t.Errorf("expected failure rate 88, got %v", eff.Failure.Rate)
+		}
+	})
+
+	t.Run("Query match", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/search?q=test", nil)
+		eff := evalChaos(cfg, req, opIdx)
+		if eff.Failure.Rate != 77 {
+			t.Errorf("expected failure rate 77, got %v", eff.Failure.Rate)
+		}
+	})
+
+	t.Run("Body match", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBufferString(`{"user": {"role": "guest"}}`))
+		eff := evalChaos(cfg, req, opIdx)
+		if eff.Failure.Rate != 66 {
+			t.Errorf("expected failure rate 66, got %v", eff.Failure.Rate)
+		}
+	})
+
+	t.Run("No rich predicate match", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/unmatched", nil)
+		eff := evalChaos(cfg, req, opIdx)
+		if eff.Failure.Rate != 0 {
+			t.Errorf("expected global failure rate 0, got %v", eff.Failure.Rate)
+		}
+	})
 }

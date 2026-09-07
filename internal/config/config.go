@@ -176,10 +176,22 @@ type Config struct {
 	Routes []RouteConfig `yaml:"routes" json:"routes"`
 }
 
+// BodyPredicate defines a condition on the JSON request body.
+type BodyPredicate struct {
+	Field string `yaml:"field" json:"field"`
+	Op    string `yaml:"op,omitempty" json:"op,omitempty"` // "eq" (default), "neq", "contains", "exists", "prefix"
+	Value string `yaml:"value,omitempty" json:"value,omitempty"`
+}
+
 // RouteConfig allows overriding chaos settings for specific endpoints.
 type RouteConfig struct {
-	Path       string            `yaml:"path" json:"path"`
-	Method     string            `yaml:"method,omitempty" json:"method,omitempty"`
+	Path        string            `yaml:"path,omitempty" json:"path,omitempty"`
+	Method      string            `yaml:"method,omitempty" json:"method,omitempty"`
+	OperationID string            `yaml:"operation_id,omitempty" json:"operation_id,omitempty"`
+	Headers     map[string]string `yaml:"headers,omitempty" json:"headers,omitempty"`
+	Query       map[string]string `yaml:"query,omitempty" json:"query,omitempty"`
+	Body        []BodyPredicate   `yaml:"body,omitempty" json:"body,omitempty"`
+
 	Bandwidth  *Bandwidth        `yaml:"bandwidth,omitempty" json:"bandwidth,omitempty"`
 	Latency    *LatencyConfig    `yaml:"latency,omitempty" json:"latency,omitempty"`
 	Failure    *FailureConfig    `yaml:"failure,omitempty" json:"failure,omitempty"`

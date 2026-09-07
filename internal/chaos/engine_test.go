@@ -175,3 +175,39 @@ func TestEngine_Middleware_Seed(t *testing.T) {
 		}
 	}
 }
+
+func TestEngine_Middleware_OperationIndex(t *testing.T) {
+	opIdx := NewOperationIndex()
+	opIdx.Register("getSecret", "GET", "/secret")
+
+	cfg := config.Config{
+		Failure: config.FailureConfig{Rate: 0},
+		Routes: []config.RouteConfig{
+			{
+				OperationID: "getSecret",
+				Failure:     &config.FailureConfig{Rate: 100},
+			},
+		},
+	}
+
+	engine := NewEngine(config.NewManager(cfg), WithOperationIndex(opIdx))
+
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	mw := engine.Middleware(next)
+
+	req1 := httptest.NewRequest("GET", "/other", nil)
+	rr1 := httptest.NewRecorder()
+	mw.ServeHTTP(rr1, req1)
+	if rr1.Code != http.StatusOK {
+		t.Errorf("expected 200 OK for /other, got %d", rr1.Code)
+	}
+
+	req2 := httptest.NewRequest("GET", "/secret", nil)
+	rr2 := httptest.NewRecorder()
+	mw.ServeHTTP(rr2, req2)
+	if rr2.Code != http.StatusInternalServerError {
+		t.Errorf("expected 500 for /secret via OperationID, got %d", rr2.Code)
+	}
+}

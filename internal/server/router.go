@@ -14,7 +14,7 @@ import (
 )
 
 // NewRouter builds a chi.Router wired with all middleware and API routes.
-func NewRouter(state *config.Manager, gate *control.Gatekeeper, apiHandler http.Handler, reporter logging.EventReporter, reports *reporting.ReportManager) chi.Router {
+func NewRouter(state *config.Manager, gate *control.Gatekeeper, apiHandler http.Handler, reporter logging.EventReporter, reports *reporting.ReportManager, opts ...chaos.EngineOption) chi.Router {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Recoverer)
@@ -28,7 +28,7 @@ func NewRouter(state *config.Manager, gate *control.Gatekeeper, apiHandler http.
 
 		r.Use(control.PauseMiddleware(gate))
 
-		engine := chaos.NewEngine(state)
+		engine := chaos.NewEngine(state, opts...)
 		r.Use(engine.Middleware)
 
 		r.Mount("/", apiHandler)

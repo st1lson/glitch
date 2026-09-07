@@ -3,7 +3,6 @@ package chaos
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"github.com/st1lson/glitch/internal/config"
 )
@@ -33,7 +32,7 @@ type EffectiveChaos struct {
 }
 
 // evalChaos overlays route-specific chaos on top of global chaos, selecting the most specific match.
-func evalChaos(cfg config.Config, r *http.Request) EffectiveChaos {
+func evalChaos(cfg config.Config, r *http.Request, opIdx *OperationIndex) EffectiveChaos {
 	eff := EffectiveChaos{
 		Bandwidth:  cfg.Bandwidth,
 		Latency:    cfg.Latency,
@@ -52,21 +51,23 @@ func evalChaos(cfg config.Config, r *http.Request) EffectiveChaos {
 
 	for i := range cfg.Routes {
 		route := &cfg.Routes[i]
-
-		if route.Method != "" && !strings.EqualFold(route.Method, r.Method) {
+		predicates := BuildPredicates(route, opIdx)
+		if len(predicates) == 0 {
 			continue
 		}
 
-		matched, score := matchPath(route.Path, r.URL.Path)
-		if !matched {
-			continue
+		allMatched := true
+		score := 0
+		for _, p := range predicates {
+			matched, s := p.Match(r)
+			if !matched {
+				allMatched = false
+				break
+			}
+			score += s
 		}
 
-		if route.Method != "" {
-			score += 100
-		}
-
-		if score > bestScore {
+		if allMatched && score > bestScore {
 			bestScore = score
 			bestMatch = route
 		}
@@ -94,19 +95,4 @@ func evalChaos(cfg config.Config, r *http.Request) EffectiveChaos {
 	}
 
 	return eff
-}
-
-// matchPath checks if a pattern matches a path and returns a specificity score.
-// Exact matches get +1000 score. Prefix matches (ending in *) get score based on prefix length.
-func matchPath(pattern, path string) (bool, int) {
-	if pattern == path {
-		return true, 1000 + len(pattern)
-	}
-	if before, ok := strings.CutSuffix(pattern, "*"); ok {
-		prefix := before
-		if strings.HasPrefix(path, prefix) {
-			return true, len(prefix)
-		}
-	}
-	return false, 0
 }

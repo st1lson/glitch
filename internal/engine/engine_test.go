@@ -58,6 +58,14 @@ paths: {}`
 	if eng.Handler() == nil {
 		t.Errorf("expected non-nil handler")
 	}
+
+	indexer, ok := eng.(OperationIndexer)
+	if !ok {
+		t.Fatal("expected OpenAPIEngine to implement OperationIndexer")
+	}
+	if indexer.OperationIndex() == nil {
+		t.Error("expected non-nil OperationIndex")
+	}
 }
 
 func TestNew_JSONEngine(t *testing.T) {

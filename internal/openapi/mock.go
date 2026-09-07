@@ -10,11 +10,15 @@ import (
 	"github.com/pb33f/libopenapi"
 	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
 	"github.com/pb33f/libopenapi/renderer"
+	"github.com/st1lson/glitch/internal/chaos"
 )
 
-// NewMockHandler loads an OpenAPI spec from filePath and returns an http.Handler
-// that mounts all defined paths and generates mock responses on the fly.
-func NewMockHandler(filePath string) (http.Handler, error) {
+type MockResult struct {
+	Handler        http.Handler
+	OperationIndex *chaos.OperationIndex
+}
+
+func NewMock(filePath string) (*MockResult, error) {
 	fileBytes, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
@@ -31,9 +35,10 @@ func NewMockHandler(filePath string) (http.Handler, error) {
 	}
 
 	r := chi.NewRouter()
+	opIdx := chaos.NewOperationIndex()
 
 	if v3Model.Model.Paths == nil || v3Model.Model.Paths.PathItems == nil {
-		return r, nil
+		return &MockResult{Handler: r, OperationIndex: opIdx}, nil
 	}
 
 	for pair := v3Model.Model.Paths.PathItems.First(); pair != nil; pair = pair.Next() {
@@ -53,6 +58,10 @@ func NewMockHandler(filePath string) (http.Handler, error) {
 				continue
 			}
 
+			if operation.OperationId != "" {
+				opIdx.Register(operation.OperationId, method, path)
+			}
+
 			m := method
 			p := path
 			op := operation
@@ -63,7 +72,17 @@ func NewMockHandler(filePath string) (http.Handler, error) {
 		}
 	}
 
-	return r, nil
+	return &MockResult{Handler: r, OperationIndex: opIdx}, nil
+}
+
+// NewMockHandler loads an OpenAPI spec from filePath and returns an http.Handler
+// that mounts all defined paths and generates mock responses on the fly.
+func NewMockHandler(filePath string) (http.Handler, error) {
+	res, err := NewMock(filePath)
+	if err != nil {
+		return nil, err
+	}
+	return res.Handler, nil
 }
 
 func handleMockRequest(w http.ResponseWriter, r *http.Request, op *v3.Operation) {

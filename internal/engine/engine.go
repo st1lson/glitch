@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/st1lson/glitch/internal/api"
+	"github.com/st1lson/glitch/internal/chaos"
 	"github.com/st1lson/glitch/internal/openapi"
 	"github.com/st1lson/glitch/internal/proxy"
 	"github.com/st1lson/glitch/internal/storage"
@@ -18,6 +19,10 @@ type Engine interface {
 	Name() string
 	Resources() []string
 	Handler() http.Handler
+}
+
+type OperationIndexer interface {
+	OperationIndex() *chaos.OperationIndex
 }
 
 // New is the Factory Method that sniffs the configuration
@@ -37,11 +42,11 @@ func New(targetFile, proxyURL string, readOnly bool) (Engine, error) {
 	}
 
 	if isOpenAPI(data) {
-		h, err := openapi.NewMockHandler(targetFile)
+		mockRes, err := openapi.NewMock(targetFile)
 		if err != nil {
 			return nil, fmt.Errorf("openapi engine: %w", err)
 		}
-		return &OpenAPIEngine{file: targetFile, handler: h}, nil
+		return &OpenAPIEngine{file: targetFile, handler: mockRes.Handler, opIdx: mockRes.OperationIndex}, nil
 	}
 
 	store, err := storage.NewJSONStore(targetFile, readOnly)
@@ -73,11 +78,13 @@ func (e *ProxyEngine) Handler() http.Handler { return e.handler }
 type OpenAPIEngine struct {
 	file    string
 	handler http.Handler
+	opIdx   *chaos.OperationIndex
 }
 
-func (e *OpenAPIEngine) Name() string          { return "OpenAPI Mock Server" }
-func (e *OpenAPIEngine) Resources() []string   { return []string{"Mocking endpoints from " + e.file} }
-func (e *OpenAPIEngine) Handler() http.Handler { return e.handler }
+func (e *OpenAPIEngine) Name() string                         { return "OpenAPI Mock Server" }
+func (e *OpenAPIEngine) Resources() []string                  { return []string{"Mocking endpoints from " + e.file} }
+func (e *OpenAPIEngine) Handler() http.Handler                { return e.handler }
+func (e *OpenAPIEngine) OperationIndex() *chaos.OperationIndex { return e.opIdx }
 
 type JSONEngine struct {
 	store   storage.Store

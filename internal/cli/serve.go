@@ -10,6 +10,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
+	"github.com/st1lson/glitch/internal/chaos"
 	"github.com/st1lson/glitch/internal/chaos/monkey"
 	"github.com/st1lson/glitch/internal/config"
 	"github.com/st1lson/glitch/internal/constants"
@@ -63,7 +64,12 @@ func runServe(cmd *cobra.Command, args []string) error {
 		printBanner(cfg, eng.Name(), eng.Resources())
 	}
 
-	router := server.NewRouter(state, gate, eng.Handler(), reporters, reports)
+	var chaosOpts []chaos.EngineOption
+	if indexer, ok := eng.(engine.OperationIndexer); ok && indexer.OperationIndex() != nil {
+		chaosOpts = append(chaosOpts, chaos.WithOperationIndex(indexer.OperationIndex()))
+	}
+
+	router := server.NewRouter(state, gate, eng.Handler(), reporters, reports, chaosOpts...)
 
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	isLoopbackBind := cfg.Host == constants.LocalhostName || cfg.Host == constants.LocalhostIPv4 || cfg.Host == constants.LocalhostIPv6

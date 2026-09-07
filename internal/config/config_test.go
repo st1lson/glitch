@@ -127,3 +127,27 @@ func TestParseBandwidth(t *testing.T) {
 		t.Error("Expected error for completely invalid string")
 	}
 }
+
+func TestRouteConfig_NewFields(t *testing.T) {
+	rc := RouteConfig{
+		OperationID: "getUser",
+		Headers:     map[string]string{"X-Test": "true"},
+		Query:       map[string]string{"limit": "10"},
+		Body: []BodyPredicate{
+			{Field: "user.role", Op: "eq", Value: "admin"},
+		},
+	}
+
+	if rc.OperationID != "getUser" {
+		t.Errorf("expected getUser, got %s", rc.OperationID)
+	}
+	if rc.Headers["X-Test"] != "true" {
+		t.Errorf("expected header X-Test=true")
+	}
+	if rc.Query["limit"] != "10" {
+		t.Errorf("expected query limit=10")
+	}
+	if len(rc.Body) != 1 || rc.Body[0].Field != "user.role" || rc.Body[0].Op != "eq" || rc.Body[0].Value != "admin" {
+		t.Errorf("unexpected body predicate: %+v", rc.Body)
+	}
+}

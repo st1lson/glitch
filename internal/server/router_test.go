@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/st1lson/glitch/internal/chaos"
 	"github.com/st1lson/glitch/internal/config"
 	"github.com/st1lson/glitch/internal/constants"
 	"github.com/st1lson/glitch/internal/control"
@@ -98,6 +99,30 @@ func TestNewRouter(t *testing.T) {
 
 		if scenario := rec.Header().Get(constants.HeaderScenario); scenario != "" {
 			t.Errorf("expected no scenario response header, got %q", scenario)
+		}
+	})
+
+	t.Run("With Operation Index Option", func(t *testing.T) {
+		opIdx := chaos.NewOperationIndex()
+		opIdx.Register("getTest", "GET", "/test-op")
+
+		cfg := config.DefaultConfig()
+		cfg.Routes = []config.RouteConfig{
+			{
+				OperationID: "getTest",
+				Failure:     &config.FailureConfig{Rate: 100},
+			},
+		}
+		st := config.NewManager(cfg)
+
+		rWithOp := NewRouter(st, gate, apiHandler, reporter, reports, chaos.WithOperationIndex(opIdx))
+
+		req := httptest.NewRequest(http.MethodGet, "/test-op", nil)
+		rec := httptest.NewRecorder()
+		rWithOp.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusInternalServerError {
+			t.Errorf("expected 500 Internal Server Error via OperationID route, got %d", rec.Code)
 		}
 	})
 }

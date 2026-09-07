@@ -38,18 +38,27 @@ type scenarioRNG struct {
 }
 
 // Engine is the central chaos-engineering component that orchestrates
-// latency injection and failure injection.
+// latency injection, failure injection, bandwidth throttling, stalling, corruption, etc.
 type Engine struct {
 	state *config.Manager
 	chain []func(http.Handler) http.Handler
+	opIdx *OperationIndex
 
 	rngMu sync.RWMutex
 	rngs  map[string]*scenarioRNG
 }
 
+type EngineOption func(*Engine)
+
+func WithOperationIndex(idx *OperationIndex) EngineOption {
+	return func(e *Engine) {
+		e.opIdx = idx
+	}
+}
+
 // NewEngine constructs a chaos Engine from the application config state.
-func NewEngine(state *config.Manager) *Engine {
-	return &Engine{
+func NewEngine(state *config.Manager, opts ...EngineOption) *Engine {
+	e := &Engine{
 		state: state,
 		chain: []func(http.Handler) http.Handler{
 			BandwidthMiddleware(),
@@ -61,6 +70,10 @@ func NewEngine(state *config.Manager) *Engine {
 		},
 		rngs: make(map[string]*scenarioRNG),
 	}
+	for _, opt := range opts {
+		opt(e)
+	}
+	return e
 }
 
 func (e *Engine) getRNG(scenario string, seed int64) *rand.Rand {
@@ -93,7 +106,6 @@ func (e *Engine) Middleware(next http.Handler) http.Handler {
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		scenario := r.Header.Get(constants.HeaderScenario)
 		cfg := e.state.Resolve(scenario)
 
@@ -102,7 +114,7 @@ func (e *Engine) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		eff := evalChaos(cfg, r)
+		eff := evalChaos(cfg, r, e.opIdx)
 
 		if !eff.Latency.Enabled() && !eff.Failure.Enabled() && eff.Bandwidth.BytesPerSecond == 0 && !eff.Corruption.Enabled() && !eff.Stall.Enabled() && !eff.Realtime.Enabled() {
 			next.ServeHTTP(w, r)

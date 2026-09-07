@@ -137,3 +137,47 @@ func TestNewMockHandler_InvalidFile(t *testing.T) {
 		t.Error("Expected error for non-existent file, got nil")
 	}
 }
+
+func TestNewMock_OperationIndex(t *testing.T) {
+	spec := `
+openapi: 3.0.0
+info:
+  title: Test API
+  version: 1.0.0
+paths:
+  /pets/{petId}:
+    get:
+      operationId: getPetById
+      responses:
+        '200':
+          description: A pet
+`
+	tmpfile, err := os.CreateTemp("", "openapi-opidx-*.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	if _, err := tmpfile.Write([]byte(spec)); err != nil {
+		t.Fatal(err)
+	}
+	_ = tmpfile.Close()
+
+	res, err := NewMock(tmpfile.Name())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if res.OperationIndex == nil {
+		t.Fatal("expected non-nil OperationIndex")
+	}
+
+	entry, ok := res.OperationIndex.Lookup("getPetById")
+	if !ok {
+		t.Fatal("expected getPetById to be registered in OperationIndex")
+	}
+
+	if entry.Method != "GET" || entry.Path != "/pets/{petId}" {
+		t.Errorf("unexpected op entry: %+v", entry)
+	}
+}
