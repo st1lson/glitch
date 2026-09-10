@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/st1lson/glitch/internal/chaos"
 	"github.com/st1lson/glitch/internal/config"
@@ -125,4 +126,107 @@ func TestNewRouter(t *testing.T) {
 			t.Errorf("expected 500 Internal Server Error via OperationID route, got %d", rec.Code)
 		}
 	})
+}
+
+type captureReporter struct {
+	events []logging.LogEvent
+}
+
+func (c *captureReporter) Report(event logging.LogEvent) {
+	c.events = append(c.events, event)
+}
+
+// The request logger wraps the chaos engine, and the engine hands its chain a
+// derived request. Unless the logger seeds the ChaosInfo itself, everything the
+// engine records is invisible from out there and every chaos metric stays zero.
+func TestNewRouter_RecordsInjectedChaos(t *testing.T) {
+	cfg := config.DefaultConfig()
+	cfg.Latency = config.LatencyConfig{Fixed: config.DurationFromGo(20 * time.Millisecond)}
+	cfg.Failure = config.FailureConfig{Statuses: []config.StatusConfig{{Code: 503, Rate: 100}}}
+
+	state := config.NewManager(cfg)
+	reporter := &captureReporter{}
+	reports := reporting.NewReportManager(state)
+	apiHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	router := NewRouter(state, control.NewGatekeeper(), apiHandler, logging.MultiReporter{reporter, reports}, reports)
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected the injected 503, got %d", rec.Code)
+	}
+	if len(reporter.events) != 1 {
+		t.Fatalf("expected 1 log event, got %d", len(reporter.events))
+	}
+
+	event := reporter.events[0]
+	if event.ChaosFailure != 503 {
+		t.Errorf("expected the injected status on the event, got %d", event.ChaosFailure)
+	}
+	if event.ChaosLatency < 20*time.Millisecond {
+		t.Errorf("expected at least 20ms of injected latency on the event, got %v", event.ChaosLatency)
+	}
+
+	report, ok := reports.GetReport(constants.DefaultScenario)
+	if !ok {
+		t.Fatal("expected a report for the default scenario")
+	}
+	if report.Metrics.Failures != 1 {
+		t.Errorf("expected 1 failure counted, got %d", report.Metrics.Failures)
+	}
+	if report.Metrics.TotalLatencyAddedMs < 20 {
+		t.Errorf("expected at least 20ms of latency counted, got %d", report.Metrics.TotalLatencyAddedMs)
+	}
+	if len(report.RequestEvents) != 1 || report.RequestEvents[0].ChaosFailureCode != 503 {
+		t.Errorf("expected the request event to carry the injected status, got %+v", report.RequestEvents)
+	}
+}
+
+func TestNewRouter_RecordsCorruptionAndStalls(t *testing.T) {
+	cfg := config.DefaultConfig()
+	cfg.Corruption = config.CorruptionConfig{Rate: 100, Strategies: []config.CorruptionStrategy{config.StrategyInjectNull}}
+	cfg.Stall = config.StallConfig{Rate: 100, Mode: config.StallModeDrop, DropAt: 100}
+
+	state := config.NewManager(cfg)
+	reporter := &captureReporter{}
+	reports := reporting.NewReportManager(state)
+	apiHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set(constants.HeaderContentType, constants.ContentTypeJSON)
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"name":"Alice"}`))
+	})
+
+	router := NewRouter(state, control.NewGatekeeper(), apiHandler, logging.MultiReporter{reporter, reports}, reports)
+
+	// Stall drop aborts the handler by panicking, which is exactly the case the
+	// logger has to survive for the metric to exist.
+	func() {
+		defer func() { _ = recover() }()
+		router.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/test", nil))
+	}()
+
+	if len(reporter.events) != 1 {
+		t.Fatalf("expected 1 log event, got %d", len(reporter.events))
+	}
+
+	event := reporter.events[0]
+	if !event.ChaosCorrupted {
+		t.Error("expected the event to be marked corrupted")
+	}
+	if !event.ChaosStalled {
+		t.Error("expected the event to be marked stalled")
+	}
+
+	report, _ := reports.GetReport(constants.DefaultScenario)
+	if report.Metrics.CorruptedPayloads != 1 {
+		t.Errorf("expected 1 corrupted payload counted, got %d", report.Metrics.CorruptedPayloads)
+	}
+	if report.Metrics.Stalls != 1 {
+		t.Errorf("expected 1 stall counted, got %d", report.Metrics.Stalls)
+	}
 }

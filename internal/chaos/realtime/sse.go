@@ -11,6 +11,10 @@ import (
 	"github.com/st1lson/glitch/internal/config"
 )
 
+// defaultMaxBufferedMessages bounds the out-of-order queue when the config
+// carries no explicit limit. Matches config.DefaultConfig.
+const defaultMaxBufferedMessages = 100
+
 // SSEInterceptor wraps an http.ResponseWriter to apply chaos to Server-Sent Events.
 type SSEInterceptor struct {
 	http.ResponseWriter
@@ -69,6 +73,9 @@ func (s *SSEInterceptor) processEvent(event []byte) {
 
 	if s.config.OutOfOrder {
 		maxBuf := s.config.MaxBufferedMessages
+		if maxBuf <= 0 {
+			maxBuf = defaultMaxBufferedMessages
+		}
 
 		s.msgQueue = append(s.msgQueue, event)
 
@@ -99,7 +106,23 @@ func (s *SSEInterceptor) deliverEvent(event []byte) {
 	}
 }
 
+// Flush pushes whatever has already been delivered on to the client, leaving
+// the out-of-order queue alone. An SSE producer flushes after every event it
+// writes, so draining here would hand each held event straight back in arrival
+// order. Releasing the queue is Drain's job.
 func (s *SSEInterceptor) Flush() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if f, ok := s.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
+// Drain releases every event still held for out-of-order delivery. Callers must
+// invoke it once the upstream handler has returned, or events buffered at the
+// end of a stream never reach the client.
+func (s *SSEInterceptor) Drain() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

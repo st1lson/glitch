@@ -2,10 +2,12 @@ package realtime
 
 import (
 	"context"
+	"fmt"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/st1lson/glitch/internal/chaos/rng"
 	"github.com/st1lson/glitch/internal/config"
 )
 
@@ -49,26 +51,115 @@ func TestSSEInterceptor_Drop(t *testing.T) {
 	}
 }
 
-func TestSSEInterceptor_OutOfOrder(t *testing.T) {
+// seededContext makes the shuffling under test reproducible.
+func seededContext(seed int64) context.Context {
+	return rng.WithRNG(context.Background(), rng.New(seed))
+}
+
+func writeEvents(interceptor *SSEInterceptor, count int) []string {
+	events := make([]string, 0, count)
+	for i := 1; i <= count; i++ {
+		event := fmt.Sprintf("data: %d\n\n", i)
+		events = append(events, event)
+		interceptor.Write([]byte(event))
+
+		// A real SSE producer flushes after every event it writes.
+		interceptor.Flush()
+	}
+	return events
+}
+
+// deliverOutOfOrder runs one stream through the interceptor under a fixed seed.
+func deliverOutOfOrder(cfg config.RealtimeConfig, seed int64, count int) (events []string, result string) {
 	rw := httptest.NewRecorder()
+	interceptor := NewSSEInterceptor(seededContext(seed), rw, cfg)
+	events = writeEvents(interceptor, count)
+	interceptor.Drain()
+	return events, rw.Body.String()
+}
+
+// Sweeps fixed seeds so the test stays deterministic without depending on one
+// seed that happens to shuffle.
+func TestSSEInterceptor_OutOfOrder(t *testing.T) {
 	cfg := config.RealtimeConfig{
 		OutOfOrder:          true,
-		MaxBufferedMessages: 2,
+		MaxBufferedMessages: 3,
 	}
 
-	interceptor := NewSSEInterceptor(context.Background(), rw, cfg)
+	reordered := false
+	for seed := int64(1); seed <= 20; seed++ {
+		events, result := deliverOutOfOrder(cfg, seed, 8)
 
-	interceptor.Write([]byte("data: 1\n\n"))
-	interceptor.Write([]byte("data: 2\n\n"))
-	interceptor.Write([]byte("data: 3\n\n"))
-	interceptor.Write([]byte("data: 4\n\n"))
-	interceptor.Write([]byte("data: 5\n\n"))
+		for _, event := range events {
+			if !strings.Contains(result, event) {
+				t.Errorf("seed %d: missing %q in out of order delivery: %q", seed, event, result)
+			}
+		}
 
-	interceptor.Flush()
+		if result != strings.Join(events, "") {
+			reordered = true
+		}
+	}
 
-	result := rw.Body.String()
+	if !reordered {
+		t.Error("out of order delivery never changed the order of a stream")
+	}
+}
 
-	if !strings.Contains(result, "data: 1\n\n") || !strings.Contains(result, "data: 5\n\n") {
-		t.Errorf("missing messages in out of order delivery: %q", result)
+// Regression guard. Flush used to drain the whole queue, and because an SSE
+// producer flushes after every event, that handed each held event straight back
+// in arrival order. Out-of-order delivery then did nothing at all.
+func TestSSEInterceptor_FlushDoesNotDrainQueue(t *testing.T) {
+	cfg := config.RealtimeConfig{
+		OutOfOrder:          true,
+		MaxBufferedMessages: 100,
+	}
+
+	heldSomething := false
+	for seed := int64(1); seed <= 20; seed++ {
+		rw := httptest.NewRecorder()
+		interceptor := NewSSEInterceptor(seededContext(seed), rw, cfg)
+		events := writeEvents(interceptor, 8)
+
+		if rw.Body.String() != strings.Join(events, "") {
+			heldSomething = true
+		}
+
+		interceptor.Drain()
+
+		for _, event := range events {
+			if !strings.Contains(rw.Body.String(), event) {
+				t.Errorf("seed %d: draining did not deliver %q: %q", seed, event, rw.Body.String())
+			}
+		}
+	}
+
+	if !heldSomething {
+		t.Error("flushing delivered every event in order, leaving nothing to reorder")
+	}
+}
+
+// An unset MaxBufferedMessages must fall back to a default rather than silently
+// disabling the feature.
+func TestSSEInterceptor_OutOfOrderWithoutBufferLimit(t *testing.T) {
+	cfg := config.RealtimeConfig{OutOfOrder: true}
+
+	reordered := false
+	for seed := int64(1); seed <= 20; seed++ {
+		events, result := deliverOutOfOrder(cfg, seed, 8)
+
+		for _, event := range events {
+			if !strings.Contains(result, event) {
+				t.Errorf("seed %d: missing %q: %q", seed, event, result)
+			}
+		}
+
+		if result != strings.Join(events, "") {
+			reordered = true
+		}
+	}
+
+	if !reordered {
+		t.Error("an unset MaxBufferedMessages disabled out of order delivery")
 	}
 }

@@ -24,6 +24,7 @@ type RequestEvent struct {
 	ChaosLatencyMs   int64     `json:"chaos_latency_ms,omitempty"`
 	ChaosFailureCode int       `json:"chaos_failure_code,omitempty"`
 	ChaosCorrupted   bool      `json:"chaos_corrupted,omitempty"`
+	ChaosStalled     bool      `json:"chaos_stalled,omitempty"`
 }
 
 // Metrics tracks aggregate sums/counts.
@@ -131,6 +132,9 @@ func (r *ReportManager) Report(event logging.LogEvent) {
 	if event.ChaosCorrupted {
 		sr.Metrics.CorruptedPayloads++
 	}
+	if event.ChaosStalled {
+		sr.Metrics.Stalls++
+	}
 	if event.ChaosLatency > 0 {
 		sr.Metrics.TotalLatencyAddedMs += event.ChaosLatency.Milliseconds()
 	}
@@ -144,6 +148,7 @@ func (r *ReportManager) Report(event logging.LogEvent) {
 		ChaosLatencyMs:   event.ChaosLatency.Milliseconds(),
 		ChaosFailureCode: event.ChaosFailure,
 		ChaosCorrupted:   event.ChaosCorrupted,
+		ChaosStalled:     event.ChaosStalled,
 	}
 
 	if len(sr.RequestEvents) < maxRequestEvents {

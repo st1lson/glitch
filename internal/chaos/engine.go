@@ -23,13 +23,31 @@ type ChaosInfo struct {
 	LatencyAdded time.Duration
 	FailureCode  int
 	Corrupted    bool
+	Stalled      bool
 }
 
 func GetChaosInfo(r *http.Request) *ChaosInfo {
-	if info, ok := r.Context().Value(chaosContextKey{}).(*ChaosInfo); ok {
+	return chaosInfoFromContext(r.Context())
+}
+
+func chaosInfoFromContext(ctx context.Context) *ChaosInfo {
+	if info, ok := ctx.Value(chaosContextKey{}).(*ChaosInfo); ok {
 		return info
 	}
 	return nil
+}
+
+// WithChaosInfo attaches a ChaosInfo to ctx, reusing one already there.
+// Middleware wrapping the Engine must call this before delegating. The Engine
+// passes the chain a derived request, so a ChaosInfo it creates itself is
+// unreachable from an outer middleware holding the original request.
+func WithChaosInfo(ctx context.Context) (context.Context, *ChaosInfo) {
+	if info := chaosInfoFromContext(ctx); info != nil {
+		return ctx, info
+	}
+
+	info := &ChaosInfo{}
+	return context.WithValue(ctx, chaosContextKey{}, info), info
 }
 
 type scenarioRNG struct {
@@ -133,8 +151,7 @@ func (e *Engine) Middleware(next http.Handler) http.Handler {
 			ctx = rng.WithRNG(ctx, scenarioRNG)
 		}
 
-		info := &ChaosInfo{}
-		ctx = context.WithValue(ctx, chaosContextKey{}, info)
+		ctx, _ = WithChaosInfo(ctx)
 
 		chaosChain.ServeHTTP(w, r.WithContext(ctx))
 	})

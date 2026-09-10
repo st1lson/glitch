@@ -24,6 +24,7 @@ type LogEvent struct {
 	ChaosLatency   time.Duration
 	ChaosFailure   int
 	ChaosCorrupted bool
+	ChaosStalled   bool
 	BytesWritten   int
 	Scenario       string
 	Formatted      string
@@ -64,48 +65,55 @@ func RequestLogger(state *config.Manager, reporter EventReporter) func(http.Hand
 
 			rw := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
 
-			next.ServeHTTP(rw, r)
+			ctx, chaosInfo := chaos.WithChaosInfo(r.Context())
+			r = r.WithContext(ctx)
 
-			duration := time.Since(start)
+			// Stall injection aborts the handler mid-response by panicking, so
+			// emitting from a deferred call is the only way those requests get
+			// logged at all. Any panic is passed on untouched afterwards.
+			defer func() {
+				recovered := recover()
 
-			method := colorMethod(r.Method)
-			status := colorStatus(rw.statusCode)
-			path := r.URL.RequestURI()
+				duration := time.Since(start)
+				path := r.URL.RequestURI()
+				line := fmt.Sprintf("%s  %s  %s  %s",
+					colorMethod(r.Method), path, colorStatus(rw.statusCode), formatDuration(duration))
 
-			line := fmt.Sprintf("%s  %s  %s  %s", method, path, status, formatDuration(duration))
-
-			event := LogEvent{
-				Timestamp:    start,
-				Method:       r.Method,
-				Path:         r.URL.RequestURI(),
-				StatusCode:   rw.statusCode,
-				Duration:     duration,
-				BytesWritten: rw.bytesWritten,
-				Scenario:     r.Header.Get(constants.HeaderScenario),
-			}
-
-			if info := chaos.GetChaosInfo(r); info != nil {
-				event.ChaosLatency = info.LatencyAdded
-				event.ChaosFailure = info.FailureCode
-				event.ChaosCorrupted = info.Corrupted
-
-				annotations := buildChaosAnnotations(info)
-				if annotations != "" {
+				if annotations := buildChaosAnnotations(chaosInfo); annotations != "" {
 					line += "  " + annotations
 				}
-			}
 
-			event.Formatted = line
+				event := LogEvent{
+					Timestamp:      start,
+					Method:         r.Method,
+					Path:           path,
+					StatusCode:     rw.statusCode,
+					Duration:       duration,
+					BytesWritten:   rw.bytesWritten,
+					Scenario:       r.Header.Get(constants.HeaderScenario),
+					ChaosLatency:   chaosInfo.LatencyAdded,
+					ChaosFailure:   chaosInfo.FailureCode,
+					ChaosCorrupted: chaosInfo.Corrupted,
+					ChaosStalled:   chaosInfo.Stalled,
+					Formatted:      line,
+				}
 
-			if reporter != nil {
-				reporter.Report(event)
-			} else {
-				fmt.Println(line)
-			}
+				if reporter != nil {
+					reporter.Report(event)
+				} else {
+					fmt.Println(line)
+				}
 
-			if verbose && reporter == nil {
-				printVerbose(r, bodyBytes)
-			}
+				if verbose && reporter == nil {
+					printVerbose(r, bodyBytes)
+				}
+
+				if recovered != nil {
+					panic(recovered)
+				}
+			}()
+
+			next.ServeHTTP(rw, r)
 		})
 	}
 }
@@ -193,15 +201,19 @@ func buildChaosAnnotations(info *chaos.ChaosInfo) string {
 	var parts []string
 
 	if info.LatencyAdded > 0 {
-		parts = append(parts, fmt.Sprintf("⚡ +%dms latency", info.LatencyAdded.Milliseconds()))
+		parts = append(parts, fmt.Sprintf("+%dms latency", info.LatencyAdded.Milliseconds()))
 	}
 
 	if info.FailureCode > 0 {
-		parts = append(parts, fmt.Sprintf("💥 injected %d", info.FailureCode))
+		parts = append(parts, fmt.Sprintf("injected %d", info.FailureCode))
 	}
 
 	if info.Corrupted {
-		parts = append(parts, "🧬 corrupted")
+		parts = append(parts, "corrupted")
+	}
+
+	if info.Stalled {
+		parts = append(parts, "stalled")
 	}
 
 	return strings.Join(parts, "  ")

@@ -67,6 +67,9 @@ func StallMiddleware() func(http.Handler) http.Handler {
 			eff, ok := getEffectiveChaos(r.Context())
 			if ok && eff.Stall.Enabled() && stall.ShouldTrigger(r.Context(), eff.Stall) {
 				w = stall.NewWriter(w, eff.Stall.Mode, eff.Stall.DropAt)
+				if info := GetChaosInfo(r); info != nil {
+					info.Stalled = true
+				}
 			}
 			next.ServeHTTP(w, r)
 		})
@@ -102,7 +105,12 @@ func RealtimeMiddleware() func(http.Handler) http.Handler {
 				if isWebSocketUpgrade(r) {
 					w = realtime.NewWSHijackInterceptor(r.Context(), w, eff.Realtime)
 				} else if isSSE(r) {
-					w = realtime.NewSSEInterceptor(r.Context(), w, eff.Realtime)
+					sse := realtime.NewSSEInterceptor(r.Context(), w, eff.Realtime)
+					next.ServeHTTP(sse, r)
+
+					// Held events are only safe to release once upstream stops.
+					sse.Drain()
+					return
 				}
 			}
 			next.ServeHTTP(w, r)

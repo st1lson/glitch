@@ -28,6 +28,21 @@ func (c *Config) Merge(override *Config) {
 	if override.NoTUI {
 		c.NoTUI = true
 	}
+	if override.ControlToken != "" {
+		c.ControlToken = override.ControlToken
+	}
+	if override.InsecureControlAPI {
+		c.InsecureControlAPI = true
+	}
+	if override.Seed != nil {
+		c.Seed = override.Seed
+	}
+	if override.ReportPath != "" {
+		c.ReportPath = override.ReportPath
+	}
+	if override.ReportFormat != "" {
+		c.ReportFormat = override.ReportFormat
+	}
 	if override.ActiveProfile != "" {
 		c.ActiveProfile = override.ActiveProfile
 	}
@@ -51,6 +66,10 @@ func (c *Config) Merge(override *Config) {
 // Note: This operates as a strict additive overlay. It is not possible to unset
 // a specific chaos rule (e.g., setting latency to 0) via this method. To clear
 // rules, the scenario must be completely reset.
+//
+// This is the path the control API uses, so ControlToken and InsecureControlAPI
+// are excluded deliberately: a caller must not be able to disarm authentication
+// through a scenario overlay.
 func (c *Config) MergeChaosOnly(override *Config) {
 	if override == nil {
 		return
