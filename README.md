@@ -3,272 +3,334 @@
   <p><strong>API Chaos Engineering. Stop pretending your backend is perfect.</strong></p>
 </div>
 
----
+Most local development and end-to-end test environments are not realistic at all: there is no slow speed, no lost connections, no random server problems.
 
-Most local development and E2E testing environments give you a perfect, zero-latency utopia. But in the real world, backends are flaky, networks drop packets, and servers randomly throw `502 Bad Gateway` errors. 
+Production is different. Backends have bad days, networks are not reliable, and eventually something is going to return a `502 Bad Gateway`.
 
-**Glitch** is a local development interceptor built specifically to simulate the chaos of production. Instead of manually hardcoding fake error responses into your apps to test loading states and error boundaries, you let Glitch inject chaos deterministically. 
+Glitch is a development tool for creating those kinds of problems on purpose. Instead of putting fake failures in your application whenever you want to test a loading state, retry process, or error boundary, Glitch adds them for you in a controlled and repeatable way.
 
-It wraps your API—either by reverse-proxying your staging environment or mocking it locally—and intentionally breaks things so you can build resilient applications and robust E2E test suites (Cypress, Playwright, etc.).
+It sits in front of your API—either by reverse-proxying a staging environment or making one locally—and makes requests act badly. That gives you a way to create stronger applications and more realistic end-to-end test suites with tools like Cypress and Playwright.
 
-> **📖 Want to use Glitch in your CI/CD pipeline?** Check out the [E2E Testing Integration Guide](docs/e2e-testing.md) for concrete Playwright and Cypress examples on how to dynamically pause requests and inject failures mid-test!
+> **📖 Using Glitch in CI/CD?** Check the [E2E Testing Integration Guide](https://github.com/st1lson/glitch/blob/main/docs/e2e-testing.md) for Playwright and Cypress examples, including pausing requests and adding failures while a test is running.
 
 ### SDKs
 
-For Playwright, [`glitch-playwright`](https://github.com/st1lson/glitch-js/tree/main/packages/playwright) gives every test its own isolated chaos scenario and cleans up after itself, so a suite still runs in parallel:
+If you are using Playwright, [`glitch-playwright`](https://github.com/st1lson/glitch-js/tree/main/packages/playwright) gives each test its unique chaos scenario and removes it afterward, so tests can still run safely in parallel:
 
-```ts
+```js
 import { expect, test } from 'glitch-playwright';
 
 test('shows an error toast when the API fails', async ({ page, glitch }) => {
   await glitch.fail(500);
 
   await page.goto('/dashboard');
+
   await expect(page.getByRole('alert')).toBeVisible();
 });
 ```
 
-[`glitch-core`](https://github.com/st1lson/glitch-js/tree/main/packages/core) is the same client without the Playwright bindings, for scripts and other frameworks. Both live in [st1lson/glitch-js](https://github.com/st1lson/glitch-js).
+[`glitch-core`](https://github.com/st1lson/glitch-/tree/main/packages/core) offers the same client without the Playwright-specific tools, which makes it useful for scripts and other test frameworks. Both packages are in [st1lson/glitch-js](https://github.com/st1lson/glitch-js).
 
 ---
 
-## 🌪️ Chaos Engineering (The Fun Part)
+## 🌪️ Chaos Engineering
 
-Glitch acts as a configurable middleware that sits between your client applications (frontend, mobile apps, or other backend microservices) and the API.
+Glitch works as middleware between your client—whether that's a frontend, mobile app, or another backend service—and the API it communicates with.
 
-### 1. Simulating Latency
-Test your loading spinners, skeleton UIs, and network timeout logic deterministically.
+### 1. Creating Latency
+
+Add delay so you can test loading indicators, skeleton UIs, timeout handling, and other slow-network behavior.
 
 ```bash
-# Add exactly 2 seconds to every request
+# Add 2 seconds to every request
 glitch --proxy https://api.staging.com --latency 2s
 
-# Simulate a variable normal distribution between 500ms and 3s
+# Simulate delay between 500ms and 3s using a distribution
 glitch --proxy https://api.staging.com --latency normal:500ms,3s
 ```
 
-### 2. Injecting Failures
-Ensure your error boundaries, retry mechanisms, and circuit breakers actually work.
+### 2. Adding Failures
+
+Add HTTP failures to ensure your error handling, retries, and circuit breakers work outside the happy path.
 
 ```bash
-# Force 20% of all requests to fail randomly
+# Make 20% of all requests fail randomly
 glitch --proxy https://api.staging.com --fail-rate 20
 
-# Force 10% to be 429 Too Many Requests, and 5% to be 503 Service Unavailable
+# Return 429 for 10% of requests and 503 for another 5%
 glitch --proxy https://api.staging.com --status 429:10,503:5
 ```
 
-### 3. Bandwidth Throttling
-Simulate a poor 3G connection by capping download speeds. Instead of just delaying the response, Glitch streams the payload to the consumer in tiny chunks.
+### 3. Limiting Bandwidth
+
+Test connections by restricting response bandwidth. Instead of simply delaying the response, Glitch sends the payload in small bits at the set speed.
 
 ```bash
-# Cap download speed to exactly 50 kilobytes per second
+# Limit download speed to 50 kilobytes per second
 glitch --proxy https://api.staging.com --bandwidth 50kbps
 
-# Dial-up speeds
+# Roughly like dial-up
 glitch --proxy https://api.staging.com --bandwidth 5kb/s
 ```
 
-### 4. Payload Corruption (Schema Resilience)
-Verify your frontend's resilience against schema drifts, unexpected null values, or missing fields by corrupting response payloads. Configured via profile or global config, Glitch intercepts JSON payloads and mutates their contents dynamically.
+### 4. Changing Data (Schema Resilience)
+
+APIs do not always give your client what it expects. Glitch can change JSON responses so you can see how your frontend reacts when fields are gone, values become null, types change, or the payload is not valid.
+
+Set up corruption through a profile or the global settings:
 
 ```yaml
 # glitch.yaml
+
 corruption:
-  rate: 15             # Corrupt 15% of JSON response payloads
-  strategies:          # Optional: choose specific mutators
-    - drop_field       # Drop random field from objects
-    - swap_type        # Change data types of values
-    - inject_null      # Replace value with null
-    - break_syntax     # Mess up raw JSON format
-  multi: true          # Apply multiple mutators at once
+  rate: 15 # 15% of JSON response payloads
+  strategies: # Optional: choose specific mutators
+    - Drop_field # Drop a random field from objects
+    - Swap_type # Change value types
+    - Inject_null # Replace a value with null
+    - Break_syntax # Produce malformed JSON
+  multi: true # Apply more than one mutator at the same time
 ```
 
 ### 5. Real-time Chaos (WebSockets & SSE)
-Inject chaos directly into your real-time streams. Simulate packet loss, random disconnects, or out-of-order message delivery for WebSockets and Server-Sent Events.
+
+Glitch can also interfere with real-time traffic. Use it to reproduce delay, lost messages, unexpected breaks, and out-of-order delivery in WebSocket and Server-Sent Events streams.
 
 ```yaml
 # glitch.yaml
+
 realtime:
   latency:
-    fixed: "500ms"
+    fixed: ""
   drop_rate: 10
   disconnect_rate: 5
   out_of_order: true
 ```
 
-### 6. Chaos Monkey Mode
-Instead of static settings, configure Glitch to dynamically change its chaos profile over time. Perfect for testing how your frontend recovers from temporary outages (like Netflix's Chaos Monkey).
+### 6. Changing Failures Over Time
+
+Sometimes you do not want one fixed failure for the test. Chaos Monkey mode allows Glitch to change its behavior over time, which is useful for checking recovery from issues or poor service.
 
 ```yaml
 # glitch.yaml
+
 monkey:
-  enabled: true
+  enabled:
   phases:
-    - duration: "2m"
+    - Duration: "2m"
       failure:
         rate: 0
-    - duration: "30s"
+
+    - Duration: "30s"
       failure:
         rate: 100
-    - duration: "1m"
+
+    - Duration: "1m"
       latency:
         fixed: "3s"
 ```
 
-### 7. Shareable Chaos Profiles
-Save your worst-case scenarios as YAML files and commit them to your repository (`.glitch/profiles/flaky.yaml`) so your whole team can test against the same chaotic conditions.
+### 7. Sharing Chaos Settings
+
+If your team regularly tests the same problems, save them as YAML settings and put them in the repository.
+
+For example, `.glitch/profiles/flaky.yaml`:
 
 ```yaml
 latency:
-  distribution: "normal"
+  distribution: ""
   min: "1s"
   max: "4s"
+
 failure:
   rate: 30
-  statuses:
-    - code: 502
-      rate: 15
+
+statuses:
+  - Code: 502
+    rate: 15
+
 stall:
   rate: 5
   mode: drop
+
 corruption:
   rate: 10
 ```
 
-Run it instantly:
+Then start the settings by name:
+
 ```bash
 glitch --proxy https://api.example.com --profile flaky
 ```
 
-### 8. Route-Specific Chaos (Partial Degradation)
-Real production environments rarely go down entirely; usually, just one microservice (like search or payments) degrades. You can override global chaos settings for specific API endpoints. The most specific path match wins.
+This makes it simple for everyone on the team—and your CI jobs—to create the same conditions.
+
+### 8. Specific Route Chaos (Partial Problems)
+
+Production systems do not usually have all problems at once. Often one endpoint or service gets slow while the rest is fine.
+
+Glitch allows you to change the chaos settings for certain routes. When multiple rules match, the specific path wins.
 
 ```yaml
 # glitch.yaml
+
 failure:
-  rate: 0 # Global baseline is stable
+  rate: 0 # Stable by default
 
 routes:
-  - path: "/api/checkout"
+  - Path: "/api/checkout"
     method: POST
     failure:
-      rate: 50 # But POSTs to checkout fail 50% of the time
-  - path: "/api/products/*"
+      rate: 50 # Half of checkout requests fail
+
+  - Path: "/api/products/*"
     latency:
-      fixed: "3s" # All product routes are extremely slow
+      fixed: "3s" # Product routes are always slow
 ```
 
 ---
 
-## 🔌 Core Interceptor Modes
+## 🔌 Main Interceptor Modes
 
-Glitch needs an API to wrap its chaos around. It provides three robust engines depending on what you have available:
+Glitch needs an API to sit in front of. Depending on what you're working with, there are three ways to provide one.
 
 ### Reverse Proxy (Recommended)
-Don't have a local backend? Point Glitch at your live staging environment.
+
+If you have a staging API already, let Glitch know:
+
 ```bash
 glitch --proxy https://api.mycompany.staging.com
 ```
-*Glitch completely bypasses CORS restrictions and ignores self-signed TLS errors, letting your local `localhost` apps or E2E tests seamlessly consume remote APIs.*
+
+*Glitch deals with CORS issues and ignores self-signed TLS errors so local `localhost` apps and E2E tests can talk to APIs without extra work.*
 
 ### OpenAPI Mock Server
-Have an OpenAPI v3 spec? Let Glitch mock it locally.
+
+If you have an OpenAPI v3 specification, Glitch can make a mock server from it:
+
 ```bash
 glitch api.yaml
 ```
-*Glitch dynamically generates fake JSON responses based on your schemas and types.*
 
-### Generic JSON Database
-Don't even have a spec yet? Just pass a JSON file.
+*Responses are created from the data types and structures in the specification.*
+
+### Simple JSON Database
+
+No OpenAPI specification yet? A simple JSON file works too.
+
 ```json
-{ "users": [{ "id": 1, "name": "Alice" }] }
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Alice"
+    }
+  ]
+}
 ```
+
+Run:
+
 ```bash
 glitch db.json
 ```
-*You instantly get a full REST CRUD API (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`) with built-in sorting, filtering, and pagination.*
+
+*Glitch offers the data as a REST CRUD API with `GET`, `POST`, `PUT`, `PATCH`, and `DELETE`, plus built-in sorting, filtering, and page display.*
 
 ---
 
-## 🛠️ Global Configuration
+## 🛠️ Configuration Settings
 
-Tired of typing long CLI flags? You can define your entire testing environment natively via a `glitch.yaml` file. Glitch automatically discovers `glitch.yaml` or `.glitch.yaml` in your current working directory.
+If you use the setup often, you do not need to use a long list of CLI flags each time.
+
+Put the settings in `glitch.yaml` or `.glitch.yaml` in your working directory and Glitch finds it automatically.
 
 ```yaml
 # glitch.yaml
+
 port: 8080
-proxy: http://api.staging.internal
+
+proxy:
+
 verbose: true
+
 latency:
   distribution: "normal"
   min: 200ms
   max: 2s
+
 failure:
   rate: 15
-  statuses:
-    - code: 502
-      rate: 10
+
+statuses:
+  - Code: 502
+    rate: 10
+
 bandwidth: 50kbps
+
 stall:
   rate: 5
   mode: drop
   drop_at: 50
+
 corruption:
   rate: 10
   strategies:
-    - drop_field
-    - inject_null
+    - Drop_field
+    - Inject_null
   multi: false
 ```
 
-Now you can simply run:
+Once the file is there, just run:
+
 ```bash
 glitch
 ```
 
-*Note: CLI flags always take precedence over the global configuration file, allowing you to easily override settings on the fly.*
+*CLI flags take priority over values in the global configuration, so you can change specific settings when needed.*
 
 ---
 
 ## Installation
 
-### Via Go
-Ensure you have Go 1.20+ installed, then run:
+### Using Go
+
+With Go 1.20 or newer installed:
 
 ```bash
 go install github.com/st1lson/glitch/cmd/glitch@latest
 ```
 
-### Via Docker
-Glitch is automatically published to the GitHub Container Registry as a highly optimized, tiny Alpine image.
+### Using Docker
+
+Glitch is also available on GitHub Container Registry as an Alpine-based image.
 
 ```bash
-docker run -p 3000:3000 ghcr.io/st1lson/glitch:latest --proxy https://api.staging.com --fail-rate 10
+docker run -p 3000:3000 --proxy https://api.staging.com --fail-rate 10
 ```
 
-Perfect for dropping into a `docker-compose.yml` stack to run your Playwright / Cypress tests against a chaotic local backend!
+It also works well in a `docker-compose.yml` setup when you want Playwright or Cypress tests to run against a deliberately unreliable local backend.
 
 ---
 
-## CLI Reference
+## CLI Help
 
 ```text
 Usage:
   glitch [file] [flags]
 
 Flags:
-      --bandwidth string   throttle response bandwidth (e.g. "50kbps", "1mbps")
-      --config string      path to global config file (default: auto-discovers glitch.yaml)
-      --fail-rate string   Overall failure rate percentage (e.g., 20)
+      --bandwidth string   limit the speed of the response (for example: "50kbps", "1mbps")
+      --config string      location of the config file (default: automatically finds glitch.yaml)
+      --fail-rate string   total percentage of failures (for example: 20)
   -h, --help               help for glitch
-      --host string        Host to bind to (default "localhost")
-      --latency string     Inject latency (e.g., 2s, normal:500ms,2s, uniform:1s,3s)
-      --no-tui             disable the interactive dashboard and use standard stdout logging
-  -p, --port int           Port to listen on (default 3000)
-      --profile string     Name of a chaos profile to apply
-      --proxy string       Proxy requests to this target URL instead of using a local file
-      --read-only          Do not persist changes to the JSON database
-      --status strings     Comma-separated specific status failures (e.g., 500:10,429:5)
-  -v, --verbose            Enable verbose logging (prints request/response bodies)
+      --host string        host to connect to (default "localhost")
+      --latency string     add delay (for example: 2s, normal:500ms,2s, uniform:1s,3s)
+      --no-tui             turn off the interactive dashboard and use regular output for logging
+  -p, --port int           port to use (default 3000)
+      --profile string     name of a chaos profile to use
+      --proxy string       send requests to this target URL instead of using a local file
+      --read-only          do not save changes to the JSON database
+      --status strings     list of specific status failures separated by commas (for example: 500:10,429:5)
+  -v, --verbose            turn on detailed logging (shows request and response bodies)
 ```
