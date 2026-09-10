@@ -13,7 +13,45 @@ When interacting with the Control API, always pass the `X-Glitch-Scenario` HTTP 
 
 ---
 
-## 1. Playwright Integration
+## Playwright: use the SDK
+
+For Playwright there is an official package that does all of this for you: [`glitch-playwright`](https://github.com/st1lson/glitch-js/tree/main/packages/playwright). It gives every test its own scenario, tags the browser's requests with it, and cleans up afterwards, so you never write the header plumbing or the teardown by hand.
+
+```bash
+npm install --save-dev glitch-playwright
+```
+
+```ts
+import { expect, test } from 'glitch-playwright';
+
+test('shows an error toast on 500', async ({ page, glitch }) => {
+  await glitch.fail(500);
+
+  await page.goto('/dashboard');
+  await expect(page.getByRole('alert')).toBeVisible();
+});
+
+test('shows a spinner while data loads', async ({ page, glitch }) => {
+  await page.goto('/dashboard');
+
+  await glitch.paused(async () => {
+    await page.getByRole('button', { name: 'Load' }).click();
+    await expect(page.getByTestId('spinner')).toBeVisible();
+  });
+
+  await expect(page.getByRole('table')).toBeVisible();
+});
+```
+
+The scenario resumes even if an assertion throws, so a failed test cannot leave requests wedged for the rest of the run. See the [package README](https://github.com/st1lson/glitch-js/tree/main/packages/playwright) for the full API, the merge semantics, and the configuration options.
+
+Driving Glitch from another framework, a script, or a custom runner? [`glitch-core`](https://github.com/st1lson/glitch-js/tree/main/packages/core) is the same client without the Playwright bindings, and it has no dependencies of its own.
+
+The rest of this guide shows the raw Control API, which is what you need for Cypress today and for any framework without an integration.
+
+---
+
+## 1. Playwright Integration (raw Control API)
 
 ### Setting up the Proxy
 Run your Playwright tests against your application, and ensure your application directs its API calls through Glitch.

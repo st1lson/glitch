@@ -13,6 +13,23 @@ It wraps your API—either by reverse-proxying your staging environment or mocki
 
 > **📖 Want to use Glitch in your CI/CD pipeline?** Check out the [E2E Testing Integration Guide](docs/e2e-testing.md) for concrete Playwright and Cypress examples on how to dynamically pause requests and inject failures mid-test!
 
+### SDKs
+
+For Playwright, [`glitch-playwright`](https://github.com/st1lson/glitch-js/tree/main/packages/playwright) gives every test its own isolated chaos scenario and cleans up after itself, so a suite still runs in parallel:
+
+```ts
+import { expect, test } from 'glitch-playwright';
+
+test('shows an error toast when the API fails', async ({ page, glitch }) => {
+  await glitch.fail(500);
+
+  await page.goto('/dashboard');
+  await expect(page.getByRole('alert')).toBeVisible();
+});
+```
+
+[`glitch-core`](https://github.com/st1lson/glitch-js/tree/main/packages/core) is the same client without the Playwright bindings, for scripts and other frameworks. Both live in [st1lson/glitch-js](https://github.com/st1lson/glitch-js).
+
 ---
 
 ## 🌪️ Chaos Engineering (The Fun Part)
